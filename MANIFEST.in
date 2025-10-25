@@ -1,0 +1,10 @@
+include README.md
+include LICENSE
+include pyproject.toml
+recursive-include container_module *.py
+recursive-include container_module py.typed
+recursive-exclude tests *
+recursive-exclude examples *
+recursive-exclude docs *
+global-exclude __pycache__
+global-exclude *.py[co]
