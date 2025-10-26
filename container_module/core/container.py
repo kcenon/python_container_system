@@ -412,7 +412,9 @@ class ValueContainer:
         """
         Internal method to deserialize values from data part.
 
-        Parses C++ format: [name,type,value];[name,type,value];...
+        Parses format with nested container support:
+        [name,type,value]; for simple values
+        [name,CONTAINER,child_count];[child1...];[child2...]; for containers
 
         Args:
             data_part: The data portion of serialized string
@@ -446,53 +448,20 @@ class ValueContainer:
         ESCAPED_DELIMITER = "__ESCAPED_SEMICOLON_BRACKET__"
         safe_data = data_part.replace("\\];", ESCAPED_DELIMITER)
 
-        # Parse items: [name,type,value];
-        # Now we can safely use non-greedy match
+        # Parse all items into a list first
         item_pattern = r'\[([^,]+),\s*([^,]+),\s*(.*?)\];'
+        matches = [(m.group(1), m.group(2), m.group(3).replace(ESCAPED_DELIMITER, "];"))
+                   for m in re.finditer(item_pattern, safe_data)]
 
-        for match in re.finditer(item_pattern, safe_data):
-            name, type_str, value_str = match.groups()
+        # Process matches recursively
+        index_ref = [0]  # Use list for mutable reference
 
-            # Restore escaped delimiters in value
-            value_str = value_str.replace(ESCAPED_DELIMITER, "];")
+        while index_ref[0] < len(matches):
+            name, type_str, value_str = matches[index_ref[0]]
 
             try:
-                # Get value type enum
                 value_type = get_type_from_string(type_str)
-
-                # Create value based on type
-                value = None
-
-                if value_type == ValueTypes.BOOL_VALUE:
-                    value = BoolValue.from_string(name, value_str)
-                elif value_type == ValueTypes.SHORT_VALUE:
-                    value = ShortValue.from_string(name, value_str)
-                elif value_type == ValueTypes.USHORT_VALUE:
-                    value = UShortValue.from_string(name, value_str)
-                elif value_type == ValueTypes.INT_VALUE:
-                    value = IntValue.from_string(name, value_str)
-                elif value_type == ValueTypes.UINT_VALUE:
-                    value = UIntValue.from_string(name, value_str)
-                elif value_type == ValueTypes.LONG_VALUE:
-                    value = LongValue.from_string(name, value_str)
-                elif value_type == ValueTypes.ULONG_VALUE:
-                    value = ULongValue.from_string(name, value_str)
-                elif value_type == ValueTypes.LLONG_VALUE:
-                    value = LLongValue.from_string(name, value_str)
-                elif value_type == ValueTypes.ULLONG_VALUE:
-                    value = ULLongValue.from_string(name, value_str)
-                elif value_type == ValueTypes.FLOAT_VALUE:
-                    value = FloatValue.from_string(name, value_str)
-                elif value_type == ValueTypes.DOUBLE_VALUE:
-                    value = DoubleValue.from_string(name, value_str)
-                elif value_type == ValueTypes.STRING_VALUE:
-                    value = StringValue.from_string(name, value_str)
-                elif value_type == ValueTypes.BYTES_VALUE:
-                    value = BytesValue.from_string(name, value_str)
-                elif value_type == ValueTypes.CONTAINER_VALUE:
-                    # Container values need special handling
-                    # For now, create empty container
-                    value = ContainerValue.from_string(name, value_str)
+                value = self._parse_value_recursive(matches, index_ref, name, value_type, value_str)
 
                 if value:
                     self._units.append(value)
@@ -500,7 +469,115 @@ class ValueContainer:
 
             except Exception as e:
                 print(f"Error deserializing value {name}: {e}")
-                continue
+
+            index_ref[0] += 1
+
+    def _parse_value_recursive(self, matches: List[tuple], index_ref: List[int],
+                                name: str, value_type: ValueTypes, value_str: str) -> Optional[Value]:
+        """
+        Recursively parse a value, handling nested containers.
+
+        Args:
+            matches: List of (name, type_str, value_str) tuples
+            index_ref: Mutable reference to current index
+            name: Value name
+            value_type: Value type
+            value_str: Value string
+
+        Returns:
+            Parsed Value object or None
+        """
+        from container_module.core.value_types import ValueTypes, get_type_from_string
+        from container_module.values import ContainerValue
+
+        if value_type == ValueTypes.CONTAINER_VALUE:
+            # Parse child count
+            try:
+                child_count = int(value_str) if value_str.strip() else 0
+            except ValueError:
+                child_count = 0
+
+            # Recursively parse children
+            children = []
+            for _ in range(child_count):
+                index_ref[0] += 1
+                if index_ref[0] < len(matches):
+                    child_name, child_type_str, child_value_str = matches[index_ref[0]]
+                    child_type = get_type_from_string(child_type_str)
+
+                    # Recursively parse child (may be another container)
+                    child_val = self._parse_value_recursive(matches, index_ref,
+                                                             child_name, child_type, child_value_str)
+                    if child_val:
+                        children.append(child_val)
+
+            return ContainerValue(name, children)
+
+        else:
+            # Create simple value
+            return self._create_value(name, value_type, value_str)
+
+    def _create_value(self, name: str, value_type: ValueTypes, value_str: str) -> Optional[Value]:
+        """
+        Helper method to create a value from type and string.
+
+        Args:
+            name: Value name
+            value_type: Value type enum
+            value_str: String representation of value
+
+        Returns:
+            Created Value object or None
+        """
+        from container_module.core.value_types import ValueTypes
+        from container_module.values import (
+            BoolValue,
+            ShortValue,
+            UShortValue,
+            IntValue,
+            UIntValue,
+            LongValue,
+            ULongValue,
+            LLongValue,
+            ULLongValue,
+            FloatValue,
+            DoubleValue,
+            StringValue,
+            BytesValue,
+        )
+
+        try:
+            if value_type == ValueTypes.BOOL_VALUE:
+                return BoolValue.from_string(name, value_str)
+            elif value_type == ValueTypes.SHORT_VALUE:
+                return ShortValue.from_string(name, value_str)
+            elif value_type == ValueTypes.USHORT_VALUE:
+                return UShortValue.from_string(name, value_str)
+            elif value_type == ValueTypes.INT_VALUE:
+                return IntValue.from_string(name, value_str)
+            elif value_type == ValueTypes.UINT_VALUE:
+                return UIntValue.from_string(name, value_str)
+            elif value_type == ValueTypes.LONG_VALUE:
+                return LongValue.from_string(name, value_str)
+            elif value_type == ValueTypes.ULONG_VALUE:
+                return ULongValue.from_string(name, value_str)
+            elif value_type == ValueTypes.LLONG_VALUE:
+                return LLongValue.from_string(name, value_str)
+            elif value_type == ValueTypes.ULLONG_VALUE:
+                return ULLongValue.from_string(name, value_str)
+            elif value_type == ValueTypes.FLOAT_VALUE:
+                return FloatValue.from_string(name, value_str)
+            elif value_type == ValueTypes.DOUBLE_VALUE:
+                return DoubleValue.from_string(name, value_str)
+            elif value_type == ValueTypes.STRING_VALUE:
+                return StringValue.from_string(name, value_str)
+            elif value_type == ValueTypes.BYTES_VALUE:
+                return BytesValue.from_string(name, value_str)
+            else:
+                return None
+        except Exception as e:
+            print(f"Error creating value {name}: {e}")
+            return None
 
     # JSON/XML conversion
     def to_json(self) -> str:

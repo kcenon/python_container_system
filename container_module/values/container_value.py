@@ -4,7 +4,7 @@ Container value implementation
 Equivalent to C++ container_value.h/cpp
 """
 
-from typing import List, Optional
+from typing import List, Optional, Union
 from container_module.core.value import Value
 from container_module.core.value_types import ValueTypes
 
@@ -17,16 +17,26 @@ class ContainerValue(Value):
     Allows hierarchical data structures.
     """
 
-    def __init__(self, name: str, units: Optional[List[Value]] = None):
+    def __init__(self, name: str, units: Optional[Union[List[Value], "ValueContainer"]] = None):
         """
         Initialize a ContainerValue.
 
         Args:
             name: The name/key of this value
-            units: List of child values
+            units: List of child values or a ValueContainer
         """
+        from container_module.core.container import ValueContainer
+
         super().__init__(name, ValueTypes.CONTAINER_VALUE, b"")
-        self._units = units.copy() if units else []
+
+        # Handle both List[Value] and ValueContainer
+        if isinstance(units, ValueContainer):
+            self._units = units.units.copy() if units.units else []
+        elif units is not None:
+            self._units = units.copy() if units else []
+        else:
+            self._units = []
+
         # Update parent references
         for unit in self._units:
             unit.set_parent(self)
@@ -154,17 +164,18 @@ class ContainerValue(Value):
 
     def serialize(self) -> str:
         """
-        Serialize to C++ compatible format: [name,type,value];
+        Serialize to enhanced format with child count: [name,type,child_count];
 
         Returns:
-            Serialized format with all child values appended
+            Serialized format with child count and all child values appended
         """
         from container_module.core.value_types import get_string_from_type
 
         type_code = get_string_from_type(self._type)
+        child_count = len(self._units)
 
-        # Container header with empty value field
-        result = f"[{self._name},{type_code},];"
+        # Container header with child count
+        result = f"[{self._name},{type_code},{child_count}];"
 
         # Append all child serializations (recursive)
         for unit in self._units:
