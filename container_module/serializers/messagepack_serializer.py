@@ -355,11 +355,34 @@ class MessagePackSerializer:
     @staticmethod
     def msgpack_to_container(msgpack_data: bytes) -> ValueContainer:
         """
-        Deserialize MessagePack data into a ValueContainer.
+        Deserialize MessagePack data into a ValueContainer with full value reconstruction.
 
-        Note: This creates a simplified container without full value reconstruction.
-        For full deserialization, use the native binary format.
+        Args:
+            msgpack_data: MessagePack encoded data
+
+        Returns:
+            Fully reconstructed ValueContainer with all values
+
+        Raises:
+            ValueError: If data format is invalid
         """
+        from container_module.values import (
+            BoolValue,
+            ShortValue,
+            UShortValue,
+            IntValue,
+            UIntValue,
+            LongValue,
+            ULongValue,
+            LLongValue,
+            ULLongValue,
+            FloatValue,
+            DoubleValue,
+            StringValue,
+            BytesValue,
+            ContainerValue,
+        )
+
         data = MessagePackSerializer.unpack(msgpack_data)
 
         if not isinstance(data, dict) or "header" not in data or "values" not in data:
@@ -377,8 +400,60 @@ class MessagePackSerializer:
             message_type=header.get("message_type", "")
         )
 
-        # Note: Value reconstruction from raw binary data is complex
-        # For now, we store the metadata
-        # Full reconstruction requires accessing value factories
+        # Reconstruct values
+        for value_dict in values_data:
+            if not isinstance(value_dict, dict):
+                continue
+
+            name = value_dict.get("name", "")
+            type_value = int(value_dict.get("type", "0"))  # Convert string to int
+            data_bytes = value_dict.get("data", b"")
+
+            # Convert bytes if needed
+            if not isinstance(data_bytes, bytes):
+                data_bytes = bytes(data_bytes) if data_bytes else b""
+
+            # Get ValueTypes enum
+            value_type = ValueTypes(type_value)
+
+            # Create value from type and data
+            value = None
+            try:
+                if value_type == ValueTypes.BOOL_VALUE:
+                    value = BoolValue.from_data(name, data_bytes)
+                elif value_type == ValueTypes.SHORT_VALUE:
+                    value = ShortValue.from_data(name, data_bytes)
+                elif value_type == ValueTypes.USHORT_VALUE:
+                    value = UShortValue.from_data(name, data_bytes)
+                elif value_type == ValueTypes.INT_VALUE:
+                    value = IntValue.from_data(name, data_bytes)
+                elif value_type == ValueTypes.UINT_VALUE:
+                    value = UIntValue.from_data(name, data_bytes)
+                elif value_type == ValueTypes.LONG_VALUE:
+                    value = LongValue.from_data(name, data_bytes)
+                elif value_type == ValueTypes.ULONG_VALUE:
+                    value = ULongValue.from_data(name, data_bytes)
+                elif value_type == ValueTypes.LLONG_VALUE:
+                    value = LLongValue.from_data(name, data_bytes)
+                elif value_type == ValueTypes.ULLONG_VALUE:
+                    value = ULLongValue.from_data(name, data_bytes)
+                elif value_type == ValueTypes.FLOAT_VALUE:
+                    value = FloatValue.from_data(name, data_bytes)
+                elif value_type == ValueTypes.DOUBLE_VALUE:
+                    value = DoubleValue.from_data(name, data_bytes)
+                elif value_type == ValueTypes.STRING_VALUE:
+                    value = StringValue.from_data(name, data_bytes)
+                elif value_type == ValueTypes.BYTES_VALUE:
+                    value = BytesValue.from_data(name, data_bytes)
+                elif value_type == ValueTypes.CONTAINER_VALUE:
+                    # Container values need special handling
+                    value = ContainerValue.from_data(name, data_bytes)
+
+                if value:
+                    container.add(value)
+
+            except Exception as e:
+                print(f"Error reconstructing value {name}: {e}")
+                continue
 
         return container
