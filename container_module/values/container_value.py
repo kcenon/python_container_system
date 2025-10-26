@@ -154,18 +154,23 @@ class ContainerValue(Value):
 
     def serialize(self) -> str:
         """
-        Serialize to string.
+        Serialize to C++ compatible format: [name,type,value];
 
         Returns:
-            Serialized format with all child values
+            Serialized format with all child values appended
         """
-        type_code = "14"  # CONTAINER_VALUE
+        from container_module.core.value_types import get_string_from_type
 
-        # Serialize all child values
-        child_serializations = [unit.serialize() for unit in self._units]
-        children_str = "|".join(child_serializations)
+        type_code = get_string_from_type(self._type)
 
-        return f"{self._name}|{type_code}|[{children_str}]"
+        # Container header with empty value field
+        result = f"[{self._name},{type_code},];"
+
+        # Append all child serializations (recursive)
+        for unit in self._units:
+            result += unit.serialize()
+
+        return result
 
     def to_json(self) -> str:
         """Convert to JSON format."""

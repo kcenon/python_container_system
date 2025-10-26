@@ -100,14 +100,16 @@ class BytesValue(Value):
 
     def serialize(self) -> str:
         """
-        Serialize to string.
+        Serialize to C++ compatible format: [name,type,value];
 
         Returns:
-            Serialized format: "name|type|base64_data"
+            Serialized format: "[name,type,base64_data];"
         """
-        type_code = "12"  # BYTES_VALUE
+        from container_module.core.value_types import get_string_from_type
+
+        type_code = get_string_from_type(self._type)
         b64_data = self.to_base64()
-        return f"{self._name}|{type_code}|{b64_data}"
+        return f"[{self._name},{type_code},{b64_data}];"
 
     def __len__(self) -> int:
         """Get byte length."""

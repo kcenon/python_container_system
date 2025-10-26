@@ -88,15 +88,17 @@ class StringValue(Value):
 
     def serialize(self) -> str:
         """
-        Serialize to string.
+        Serialize to C++ compatible format: [name,type,value];
 
         Returns:
-            Serialized format: "name|type|value"
+            Serialized format: "[name,type,value];"
         """
-        type_code = "13"  # STRING_VALUE
-        # Escape pipe characters in value
-        escaped_value = self._value.replace("|", "\\|")
-        return f"{self._name}|{type_code}|{escaped_value}"
+        from container_module.core.value_types import get_string_from_type
+
+        type_code = get_string_from_type(self._type)
+        # Escape special characters that could break parsing
+        escaped_value = self._value.replace("];", "\\];")
+        return f"[{self._name},{type_code},{escaped_value}];"
 
     def __len__(self) -> int:
         """Get string length."""

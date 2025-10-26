@@ -83,14 +83,16 @@ class BoolValue(Value):
 
     def serialize(self) -> str:
         """
-        Serialize to string.
+        Serialize to C++ compatible format: [name,type,value];
 
         Returns:
-            Serialized format: "name|type|value"
+            Serialized format: "[name,type,value];"
         """
-        type_code = "1"  # BOOL_VALUE
-        value_str = "1" if self._value else "0"
-        return f"{self._name}|{type_code}|{value_str}"
+        from container_module.core.value_types import get_string_from_type
+
+        type_code = get_string_from_type(self._type)
+        value_str = "true" if self._value else "false"
+        return f"[{self._name},{type_code},{value_str}];"
 
     def __bool__(self) -> bool:
         """Python boolean conversion."""

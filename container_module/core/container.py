@@ -280,7 +280,9 @@ class ValueContainer:
     # Serialization
     def serialize(self) -> str:
         """
-        Serialize this container to a string.
+        Serialize this container to C++ compatible format.
+
+        Format: @header={{[key,value];...}}@data={{[name,type,value];...}};
 
         Returns:
             Serialized string representation
@@ -290,25 +292,26 @@ class ValueContainer:
             if not self._changed_data and self._data_string:
                 return self._data_string
 
-            # Build header
-            header_parts = [
-                f"source_id={self._source_id}",
-                f"source_sub_id={self._source_sub_id}",
-                f"target_id={self._target_id}",
-                f"target_sub_id={self._target_sub_id}",
-                f"message_type={self._message_type}",
-                f"version={self._version}",
-            ]
-            header = "|".join(header_parts)
+            # Build header section
+            header_items = []
+            # Only include non-default values in header
+            if self._message_type != self.DEFAULT_MESSAGE_TYPE:
+                header_items.append(f"[target_id,{self._target_id}];")
+                header_items.append(f"[target_sub_id,{self._target_sub_id}];")
+                header_items.append(f"[source_id,{self._source_id}];")
+                header_items.append(f"[source_sub_id,{self._source_sub_id}];")
 
-            # Build data
-            value_parts = []
-            for unit in self._units:
-                value_parts.append(unit.serialize())
-            data = "|".join(value_parts)
+            header_items.append(f"[message_type,{self._message_type}];")
+            header_items.append(f"[version,{self._version}];")
+
+            header = "@header={{" + "".join(header_items) + "}}"
+
+            # Build data section
+            data_items = "".join(unit.serialize() for unit in self._units)
+            data = "@data={{" + data_items + "}};"
 
             # Combine
-            result = f"{header}||{data}"
+            result = header + data
             self._data_string = result
             self._changed_data = False
             return result
@@ -324,7 +327,9 @@ class ValueContainer:
 
     def deserialize(self, data_string: str, parse_only_header: bool = True) -> bool:
         """
-        Deserialize from a string.
+        Deserialize from C++ compatible format.
+
+        Format: @header={{[key,value];...}}@data={{[name,type,value];...}};
 
         Args:
             data_string: Serialized data
@@ -334,33 +339,43 @@ class ValueContainer:
             True if successful, False otherwise
         """
         try:
+            import re
+
             with self._get_write_lock():
                 self._data_string = data_string
 
-                # Split header and data
-                if "||" not in data_string:
+                # Parse @header section
+                header_pattern = r'@header=\s*\{\{(.*?)\}\}'
+                header_match = re.search(header_pattern, data_string)
+                if not header_match:
                     return False
 
-                header_part, data_part = data_string.split("||", 1)
+                header_content = header_match.group(1)
 
-                # Parse header
+                # Parse header items: [key,value];
+                item_pattern = r'\[([^,]+),\s*([^\]]*)\];'
                 header_fields = {}
-                for field in header_part.split("|"):
-                    if "=" in field:
-                        key, value = field.split("=", 1)
-                        header_fields[key] = value
+                for match in re.finditer(item_pattern, header_content):
+                    key, value = match.groups()
+                    header_fields[key] = value
 
                 self._source_id = header_fields.get("source_id", "")
                 self._source_sub_id = header_fields.get("source_sub_id", "")
                 self._target_id = header_fields.get("target_id", "")
                 self._target_sub_id = header_fields.get("target_sub_id", "")
-                self._message_type = header_fields.get("message_type", "")
+                self._message_type = header_fields.get("message_type", self.DEFAULT_MESSAGE_TYPE)
                 self._version = header_fields.get("version", self.DEFAULT_VERSION)
 
-                # Parse values if requested
-                if not parse_only_header and data_part:
-                    self._deserialize_values(data_part)
-                    self._parsed_data = True
+                # Parse @data section if requested
+                if not parse_only_header:
+                    data_pattern = r'@data=\s*\{\{?(.*?)\}\}?;'
+                    data_match = re.search(data_pattern, data_string)
+                    if data_match:
+                        data_content = data_match.group(1)
+                        self._deserialize_values(data_content)
+                        self._parsed_data = True
+                    else:
+                        self._parsed_data = True
                 else:
                     self._parsed_data = False
 
@@ -369,6 +384,8 @@ class ValueContainer:
 
         except Exception as e:
             print(f"Deserialization error: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     def deserialize_array(
@@ -395,13 +412,95 @@ class ValueContainer:
         """
         Internal method to deserialize values from data part.
 
+        Parses C++ format: [name,type,value];[name,type,value];...
+
         Args:
             data_part: The data portion of serialized string
         """
-        # This is a simplified implementation
-        # In practice, you would need to parse based on the actual format
-        # For now, we'll leave this as a placeholder
-        pass
+        import re
+        from container_module.core.value_types import get_type_from_string, ValueTypes
+        from container_module.values import (
+            BoolValue,
+            ShortValue,
+            UShortValue,
+            IntValue,
+            UIntValue,
+            LongValue,
+            ULongValue,
+            LLongValue,
+            ULLongValue,
+            FloatValue,
+            DoubleValue,
+            StringValue,
+            BytesValue,
+            ContainerValue,
+        )
+
+        # Clear existing values
+        self._units.clear()
+
+        if not data_part or not data_part.strip():
+            return
+
+        # Replace escaped ]; with placeholder to avoid regex issues
+        ESCAPED_DELIMITER = "__ESCAPED_SEMICOLON_BRACKET__"
+        safe_data = data_part.replace("\\];", ESCAPED_DELIMITER)
+
+        # Parse items: [name,type,value];
+        # Now we can safely use non-greedy match
+        item_pattern = r'\[([^,]+),\s*([^,]+),\s*(.*?)\];'
+
+        for match in re.finditer(item_pattern, safe_data):
+            name, type_str, value_str = match.groups()
+
+            # Restore escaped delimiters in value
+            value_str = value_str.replace(ESCAPED_DELIMITER, "];")
+
+            try:
+                # Get value type enum
+                value_type = get_type_from_string(type_str)
+
+                # Create value based on type
+                value = None
+
+                if value_type == ValueTypes.BOOL_VALUE:
+                    value = BoolValue.from_string(name, value_str)
+                elif value_type == ValueTypes.SHORT_VALUE:
+                    value = ShortValue.from_string(name, value_str)
+                elif value_type == ValueTypes.USHORT_VALUE:
+                    value = UShortValue.from_string(name, value_str)
+                elif value_type == ValueTypes.INT_VALUE:
+                    value = IntValue.from_string(name, value_str)
+                elif value_type == ValueTypes.UINT_VALUE:
+                    value = UIntValue.from_string(name, value_str)
+                elif value_type == ValueTypes.LONG_VALUE:
+                    value = LongValue.from_string(name, value_str)
+                elif value_type == ValueTypes.ULONG_VALUE:
+                    value = ULongValue.from_string(name, value_str)
+                elif value_type == ValueTypes.LLONG_VALUE:
+                    value = LLongValue.from_string(name, value_str)
+                elif value_type == ValueTypes.ULLONG_VALUE:
+                    value = ULLongValue.from_string(name, value_str)
+                elif value_type == ValueTypes.FLOAT_VALUE:
+                    value = FloatValue.from_string(name, value_str)
+                elif value_type == ValueTypes.DOUBLE_VALUE:
+                    value = DoubleValue.from_string(name, value_str)
+                elif value_type == ValueTypes.STRING_VALUE:
+                    value = StringValue.from_string(name, value_str)
+                elif value_type == ValueTypes.BYTES_VALUE:
+                    value = BytesValue.from_string(name, value_str)
+                elif value_type == ValueTypes.CONTAINER_VALUE:
+                    # Container values need special handling
+                    # For now, create empty container
+                    value = ContainerValue.from_string(name, value_str)
+
+                if value:
+                    self._units.append(value)
+                    value.set_parent(self)
+
+            except Exception as e:
+                print(f"Error deserializing value {name}: {e}")
+                continue
 
     # JSON/XML conversion
     def to_json(self) -> str:

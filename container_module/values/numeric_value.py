@@ -66,11 +66,11 @@ class NumericValue(Value, ABC):
         return str(self._value)
 
     def serialize(self) -> str:
-        """Serialize to string format."""
+        """Serialize to C++ compatible format: [name,type,value];"""
         from container_module.core.value_types import get_string_from_type
 
         type_code = get_string_from_type(self._type)
-        return f"{self._name}|{type_code}|{self._value}"
+        return f"[{self._name},{type_code},{self._value}];"
 
 
 # Integer types
