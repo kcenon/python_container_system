@@ -148,38 +148,77 @@ class UIntValue(NumericValue):
 
 
 class LongValue(NumericValue):
-    """Platform-dependent signed long."""
+    """
+    32-bit signed integer (type 6).
+
+    Policy: Enforces 32-bit range [-2^31, 2^31-1].
+    Values exceeding this range should use LLongValue.
+    Always serializes as 4 bytes (int32) regardless of platform.
+    """
+
+    # 32-bit signed range constants
+    INT32_MIN = -2**31
+    INT32_MAX = 2**31 - 1
 
     def __init__(self, name: str, value: int):
-        super().__init__(name, ValueTypes.LONG_VALUE, value, "l")
+        # Enforce strict 32-bit range policy
+        if not (self.INT32_MIN <= value <= self.INT32_MAX):
+            raise OverflowError(
+                f"LongValue: value {value} exceeds 32-bit range "
+                f"[{self.INT32_MIN}, {self.INT32_MAX}]. "
+                "Use LLongValue for 64-bit values."
+            )
+        # Always serialize as 4 bytes (int32), using lowercase 'i'
+        super().__init__(name, ValueTypes.LONG_VALUE, value, "<i")
 
     @classmethod
     def from_data(cls, name: str, data: bytes) -> "LongValue":
-        value = struct.unpack("l", data)[0]
+        # Deserialize as int32 (4 bytes)
+        value = struct.unpack("<i", data)[0]
         return cls(name, value)
 
     @classmethod
     def from_string(cls, name: str, value_str: str) -> "LongValue":
-        return cls(name, int(value_str))
+        value = int(value_str)
+        return cls(name, value)
 
     def to_long(self) -> int:
         return self._value
 
 
 class ULongValue(NumericValue):
-    """Platform-dependent unsigned long."""
+    """
+    32-bit unsigned integer (type 7).
+
+    Policy: Enforces 32-bit range [0, 2^32-1].
+    Values exceeding this range should use ULLongValue.
+    Always serializes as 4 bytes (uint32) regardless of platform.
+    """
+
+    # 32-bit unsigned range constant
+    UINT32_MAX = 2**32 - 1
 
     def __init__(self, name: str, value: int):
-        super().__init__(name, ValueTypes.ULONG_VALUE, value, "L")
+        # Enforce strict 32-bit range policy
+        if not (0 <= value <= self.UINT32_MAX):
+            raise OverflowError(
+                f"ULongValue: value {value} exceeds 32-bit range "
+                f"[0, {self.UINT32_MAX}]. "
+                "Use ULLongValue for 64-bit values."
+            )
+        # Always serialize as 4 bytes (uint32), using uppercase 'I'
+        super().__init__(name, ValueTypes.ULONG_VALUE, value, "<I")
 
     @classmethod
     def from_data(cls, name: str, data: bytes) -> "ULongValue":
-        value = struct.unpack("L", data)[0]
+        # Deserialize as uint32 (4 bytes)
+        value = struct.unpack("<I", data)[0]
         return cls(name, value)
 
     @classmethod
     def from_string(cls, name: str, value_str: str) -> "ULongValue":
-        return cls(name, int(value_str))
+        value = int(value_str)
+        return cls(name, value)
 
     def to_ulong(self) -> int:
         return self._value
