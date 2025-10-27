@@ -1,7 +1,7 @@
 # Architecture Documentation - Python Container System
 
 > **Version:** 1.0.0
-> **Last Updated:** 2025-10-26
+> **Last Updated:** 2025-10-27
 > **Language:** **English** | [한국어](ARCHITECTURE_KO.md)
 
 ---
@@ -1324,6 +1324,118 @@ def container_transaction(container: ValueContainer):
    class CustomValue(Value):
        pass  # NotImplementedError (missing serialize)
    ```
+
+---
+
+## Breaking Changes and Migration Guide
+
+### Long/ULong Type Policy (v1.0.0 - 2025-10-27)
+
+**IMPORTANT**: This version introduces changes to `LongValue` and `ULongValue` types to achieve cross-language compatibility and platform independence.
+
+#### Background
+
+Previous versions used Python's platform-dependent `long` type, which could be 8 bytes on some systems, causing serialization incompatibilities with Windows (4 bytes). The new policy enforces strict 32-bit ranges for `LongValue` (type 6) and `ULongValue` (type 7) across all platforms.
+
+#### What Changed
+
+**Enforced 32-bit Ranges:**
+- **`LongValue`** (type 6): Range [-2³¹, 2³¹-1] with overflow checking
+- **`ULongValue`** (type 7): Range [0, 2³²-1] with overflow checking
+- **`LLongValue`** (type 8): Full 64-bit signed range (no changes)
+- **`ULLongValue`** (type 9): Full 64-bit unsigned range (no changes)
+
+**Serialization:**
+- `LongValue` now always serializes as 4 bytes (was platform-dependent)
+- `ULongValue` now always serializes as 4 bytes (was platform-dependent)
+- Consistent little-endian byte order enforced
+
+#### Migration Guide
+
+**Before (v0.x):**
+```python
+from container_module import LongValue, ULongValue
+
+# Platform-dependent: 8 bytes on Unix, 4 bytes on Windows
+timestamp = LongValue("timestamp", 1234567890)  # OK
+large_value = LongValue("large", 5_000_000_000)  # OK on Unix, overflow on Windows
+```
+
+**After (v1.0.0):**
+```python
+from container_module import LongValue, ULongValue, LLongValue, ULLongValue
+
+# For 32-bit values: use LongValue/ULongValue (raises OverflowError if out of range)
+timestamp = LongValue("timestamp", 1234567890)  # OK: within int32 range
+
+# For 64-bit values: use LLongValue/ULLongValue
+large_value = LLongValue("large", 5_000_000_000)  # Use this for large values
+
+# Overflow Error for out-of-range values
+try:
+    invalid = LongValue("test", 5_000_000_000)  # Raises OverflowError
+except OverflowError as e:
+    print(f"Value out of range: {e}")
+    # Use LLongValue instead
+    valid = LLongValue("test", 5_000_000_000)
+```
+
+**Error Handling:**
+```python
+def create_long_value(name: str, value: int):
+    """
+    Safely create a long value, automatically choosing the right type.
+    """
+    try:
+        # Try 32-bit first
+        return LongValue(name, value)
+    except OverflowError:
+        # Fall back to 64-bit
+        return LLongValue(name, value)
+
+# Usage
+value = create_long_value("counter", user_input)
+container.add_value(value)
+```
+
+#### Type Selection Guide
+
+| Value Range | Type to Use | Raises OverflowError? |
+|-------------|-------------|-----------------------|
+| [-2³¹, 2³¹-1] | `LongValue` | Yes, if out of range |
+| [0, 2³²-1] | `ULongValue` | Yes, if out of range |
+| Full int range (signed) | `LLongValue` | No |
+| Full int range (unsigned) | `ULLongValue` | No |
+
+#### Serialization Compatibility
+
+After this change, all container systems are compatible:
+
+| Language | Type 6 (long) | Type 7 (ulong) | Bytes | Endianness |
+|----------|---------------|----------------|-------|------------|
+| C++      | int32_t       | uint32_t       | 4     | Little |
+| **Python** | **int32**     | **uint32**     | **4** | **Little** |
+| .NET     | int           | uint           | 4     | Little |
+| Go       | int32         | uint32         | 4     | Little |
+| Rust     | i32           | u32            | 4     | Little |
+
+#### Testing
+
+Comprehensive test suite added in `tests/test_long_range_checking.py`:
+- 31 tests covering range validation, serialization, error handling
+- All tests passing
+- Verified cross-language compatibility
+
+#### Platform Independence
+
+**Before**: LongValue size varied by platform
+- Unix/Linux/macOS: 8 bytes (could cause overflow when sent to Windows)
+- Windows: 4 bytes
+
+**After**: LongValue is always 4 bytes on all platforms
+- Consistent serialization
+- No more platform-specific overflow issues
+- Full compatibility with other container systems
 
 ---
 
