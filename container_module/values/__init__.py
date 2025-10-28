@@ -7,6 +7,7 @@ This module contains concrete implementations of value types:
 - StringValue: UTF-8 string values
 - BytesValue: Raw byte array values
 - ContainerValue: Nested container values
+- ArrayValue: Array/list values
 """
 
 from container_module.values.bool_value import BoolValue
@@ -25,6 +26,7 @@ from container_module.values.numeric_value import (
 from container_module.values.string_value import StringValue
 from container_module.values.bytes_value import BytesValue
 from container_module.values.container_value import ContainerValue
+from container_module.values.array_value import ArrayValue
 
 __all__ = [
     "BoolValue",
@@ -41,4 +43,5 @@ __all__ = [
     "StringValue",
     "BytesValue",
     "ContainerValue",
+    "ArrayValue",
 ]

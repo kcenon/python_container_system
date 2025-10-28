@@ -31,6 +31,7 @@ class ValueTypes(Enum):
     - BYTES_VALUE: Raw byte array (code: "12")
     - STRING_VALUE: UTF-8 string (code: "13")
     - CONTAINER_VALUE: Nested container (code: "14")
+    - ARRAY_VALUE: Array/list of values (code: "15")
     """
 
     NULL_VALUE = 0
@@ -48,6 +49,7 @@ class ValueTypes(Enum):
     BYTES_VALUE = 12
     STRING_VALUE = 13
     CONTAINER_VALUE = 14
+    ARRAY_VALUE = 15
 
 
 # Type mapping: string code -> ValueTypes (equivalent to C++ type_map)
@@ -67,6 +69,7 @@ _TYPE_MAP: Dict[str, ValueTypes] = {
     "12": ValueTypes.BYTES_VALUE,
     "13": ValueTypes.STRING_VALUE,
     "14": ValueTypes.CONTAINER_VALUE,
+    "15": ValueTypes.ARRAY_VALUE,
 }
 
 # Reverse mapping: ValueTypes -> string code
