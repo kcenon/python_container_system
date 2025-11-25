@@ -4,7 +4,7 @@ Array value implementation
 Equivalent to C++ array_value.h/cpp
 """
 
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Iterator
 from container_module.core.value import Value
 from container_module.core.value_types import ValueTypes
 
@@ -115,6 +115,7 @@ class ArrayValue(Value):
             )
         return self._values[index]
 
+    @property
     def size(self) -> int:
         """
         Get the number of elements in the array.
@@ -209,7 +210,7 @@ class ArrayValue(Value):
         """Get number of elements."""
         return len(self._values)
 
-    def __getitem__(self, index: int) -> Value:
+    def __getitem__(self, index: int) -> Value:  # type: ignore[override]
         """Get element at index (supports Python indexing)."""
         return self._values[index]
 
@@ -222,7 +223,7 @@ class ArrayValue(Value):
         value.set_parent(self)
         self._values[index] = value
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Value]:
         """Iterate over elements."""
         return iter(self._values)
 

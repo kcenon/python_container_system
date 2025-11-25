@@ -9,7 +9,9 @@ Equivalent to C++ core/value.h
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any, Union, TypeVar
+
+T = TypeVar("T")
 import struct
 import json
 import xml.etree.ElementTree as ET
@@ -84,12 +86,12 @@ class Value(ABC):
         """Get the list of child values."""
         return self._units
 
-    def set_parent(self, parent: Optional[Value]) -> None:
+    def set_parent(self, parent: Optional[Any]) -> None:
         """
         Set the parent value.
 
         Args:
-            parent: The parent value
+            parent: The parent value (Value or ValueContainer)
         """
         self._parent = parent
 
@@ -224,7 +226,7 @@ class Value(ABC):
         return ET.tostring(root, encoding="unicode")
 
     # Type conversion methods with safe_convert pattern
-    def _safe_convert(self, type_name: str, default_value: Any) -> Any:
+    def _safe_convert(self, type_name: str, default_value: T) -> T:
         """
         Template method for safe type conversion with null checking.
 

@@ -12,7 +12,7 @@ It implements a minimal MessagePack encoder/decoder for basic types.
 """
 
 import struct
-from typing import Any, List, Dict, Union
+from typing import Any, List, Dict, Union, Optional
 from container_module.core.value import Value
 from container_module.core.container import ValueContainer
 from container_module.core.value_types import ValueTypes
@@ -429,7 +429,7 @@ class MessagePackSerializer:
             value_type = ValueTypes(type_value)
 
             # Create value from type and data
-            value = None
+            value: Optional[Value] = None
             try:
                 if value_type == ValueTypes.BOOL_VALUE:
                     value = BoolValue.from_data(name, data_bytes)

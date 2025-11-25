@@ -8,7 +8,7 @@ Equivalent to C++ core/container.h
 """
 
 from __future__ import annotations
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Tuple, Dict, Any, Union
 import json
 import xml.etree.ElementTree as ET
 from threading import RLock
@@ -755,14 +755,14 @@ class ValueContainer:
         """
         self._thread_safe_enabled = enabled
 
-    def _get_read_lock(self):
+    def _get_read_lock(self) -> Any:
         """Get a read lock context manager."""
         if self._thread_safe_enabled:
             self._read_count += 1
             return self._lock
         return _DummyLock()
 
-    def _get_write_lock(self):
+    def _get_write_lock(self) -> Any:
         """Get a write lock context manager."""
         if self._thread_safe_enabled:
             self._write_count += 1
@@ -797,8 +797,8 @@ class ValueContainer:
 class _DummyLock:
     """Dummy lock that does nothing (for when thread safety is disabled)."""
 
-    def __enter__(self):
+    def __enter__(self) -> "_DummyLock":
         return self
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: Any) -> None:
         pass
