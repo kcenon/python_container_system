@@ -4,7 +4,7 @@ Array value implementation
 Equivalent to C++ array_value.h/cpp
 """
 
-from typing import List, Optional, Any, Iterator
+from typing import List, Optional, Iterator
 from container_module.core.value import Value
 from container_module.core.value_types import ValueTypes
 

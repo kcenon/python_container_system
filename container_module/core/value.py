@@ -9,14 +9,13 @@ Equivalent to C++ core/value.h
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import Optional, List, Dict, Any, Union, TypeVar
-
-T = TypeVar("T")
-import struct
+from typing import Optional, List, Any, Union, TypeVar
 import json
 import xml.etree.ElementTree as ET
 
 from container_module.core.value_types import ValueTypes, get_string_from_type
+
+T = TypeVar("T")
 
 
 class Value(ABC):
