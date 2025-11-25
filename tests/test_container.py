@@ -120,7 +120,7 @@ class TestValueContainer:
         assert len(container.units) == 0
 
     def test_serialize_deserialize(self):
-        """Test serialization and deserialization."""
+        """Test serialization and deserialization with C++ compatible format."""
         container = ValueContainer(
             source_id="src",
             target_id="tgt",
@@ -131,9 +131,14 @@ class TestValueContainer:
         # Serialize
         serialized = container.serialize()
         assert isinstance(serialized, str)
-        assert "source_id=src" in serialized
-        assert "target_id=tgt" in serialized
-        assert "message_type=test" in serialized
+        # Header uses numeric IDs for C++ compatibility:
+        # 1=target_id, 2=target_sub_id, 3=source_id, 4=source_sub_id,
+        # 5=message_type, 6=version
+        assert "[3,src]" in serialized  # source_id
+        assert "[1,tgt]" in serialized  # target_id
+        assert "[5,test]" in serialized  # message_type
+        assert "@header={{" in serialized
+        assert "@data={{" in serialized
 
         # Deserialize
         new_container = ValueContainer(data_string=serialized)
