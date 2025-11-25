@@ -28,7 +28,7 @@ Unified JSON v2.0 Format:
     "values": [
       {
         "name": "username",
-        "type": 13,
+        "type": 12,
         "type_name": "string",
         "data": "john_doe"
       }
