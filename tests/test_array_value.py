@@ -21,7 +21,7 @@ class TestArrayValueCreation:
         arr = ArrayValue("numbers")
         assert arr.name == "numbers"
         assert arr.type == ValueTypes.ARRAY_VALUE
-        assert arr.size() == 0
+        assert arr.size == 0
         assert arr.empty()
 
     def test_array_with_initial_values(self):
@@ -32,7 +32,7 @@ class TestArrayValueCreation:
             IntValue("", 3),
         ]
         arr = ArrayValue("numbers", values)
-        assert arr.size() == 3
+        assert arr.size == 3
         assert not arr.empty()
         assert arr.at(0).to_int() == 1
         assert arr.at(1).to_int() == 2
@@ -47,7 +47,7 @@ class TestArrayValueCreation:
             BoolValue("", True),
         ]
         arr = ArrayValue("mixed", values)
-        assert arr.size() == 4
+        assert arr.size == 4
         assert arr.at(0).to_int() == 42
         assert arr.at(1).to_string() == "hello"
         assert abs(arr.at(2).to_double() - 3.14) < 0.01
@@ -64,7 +64,7 @@ class TestArrayValueOperations:
         arr.append(IntValue("", 20))
         arr.append(IntValue("", 30))
 
-        assert arr.size() == 3
+        assert arr.size == 3
         assert arr.at(0).to_int() == 10
         assert arr.at(1).to_int() == 20
         assert arr.at(2).to_int() == 30
@@ -75,7 +75,7 @@ class TestArrayValueOperations:
         arr.push_back(StringValue("", "first"))
         arr.push_back(StringValue("", "second"))
 
-        assert arr.size() == 2
+        assert arr.size == 2
         assert arr.at(0).to_string() == "first"
         assert arr.at(1).to_string() == "second"
 
@@ -94,10 +94,10 @@ class TestArrayValueOperations:
     def test_clear_array(self):
         """Test clearing all elements."""
         arr = ArrayValue("items", [IntValue("", i) for i in range(5)])
-        assert arr.size() == 5
+        assert arr.size == 5
 
         arr.clear()
-        assert arr.size() == 0
+        assert arr.size == 0
         assert arr.empty()
 
     def test_values_returns_copy(self):
@@ -111,7 +111,7 @@ class TestArrayValueOperations:
 
         # Modifying copy should not affect original
         copy.clear()
-        assert arr.size() == 2
+        assert arr.size == 2
 
 
 class TestArrayValuePythonInterface:
@@ -215,7 +215,7 @@ class TestArrayValueSerialization:
         arr.append(StringValue("text", "test"))
 
         xml_str = arr.to_xml()
-        assert '<array' in xml_str
+        assert "<array" in xml_str
         assert 'name="items"' in xml_str
         assert 'count="2"' in xml_str
 
@@ -240,7 +240,7 @@ class TestArrayValueIntegration:
         retrieved = container.get_value("scores")
         assert retrieved is not None
         assert isinstance(retrieved, ArrayValue)
-        assert retrieved.size() == 3
+        assert retrieved.size == 3
 
     def test_array_of_containers(self):
         """Test array containing container values."""
@@ -254,7 +254,7 @@ class TestArrayValueIntegration:
 
         users_array = ArrayValue("users", [user1, user2])
 
-        assert users_array.size() == 2
+        assert users_array.size == 2
         assert users_array[0].get_value("name").to_string() == "Alice"
         assert users_array[1].get_value("name").to_string() == "Bob"
 
@@ -292,7 +292,7 @@ class TestArrayValueEdgeCases:
         values = [IntValue("", i) for i in range(1000)]
         arr = ArrayValue("large", values)
 
-        assert arr.size() == 1000
+        assert arr.size == 1000
         assert arr.at(0).to_int() == 0
         assert arr.at(999).to_int() == 999
 
@@ -302,8 +302,8 @@ class TestArrayValueEdgeCases:
         inner2 = ArrayValue("inner", [IntValue("", 3), IntValue("", 4)])
         outer = ArrayValue("outer", [inner1, inner2])
 
-        assert outer.size() == 2
-        assert outer[0].size() == 2
+        assert outer.size == 2
+        assert outer[0].size == 2
         assert outer[0][0].to_int() == 1
         assert outer[1][1].to_int() == 4
 

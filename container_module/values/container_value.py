@@ -4,9 +4,13 @@ Container value implementation
 Equivalent to C++ container_value.h/cpp
 """
 
-from typing import List, Optional, Union
+from __future__ import annotations
+from typing import List, Optional, Union, TYPE_CHECKING, Iterator
 from container_module.core.value import Value
 from container_module.core.value_types import ValueTypes
+
+if TYPE_CHECKING:
+    from container_module.core.container import ValueContainer
 
 
 class ContainerValue(Value):
@@ -17,7 +21,9 @@ class ContainerValue(Value):
     Allows hierarchical data structures.
     """
 
-    def __init__(self, name: str, units: Optional[Union[List[Value], "ValueContainer"]] = None):
+    def __init__(
+        self, name: str, units: Optional[Union[List[Value], "ValueContainer"]] = None
+    ):
         """
         Initialize a ContainerValue.
 
@@ -118,9 +124,7 @@ class ContainerValue(Value):
         """
         if only_container:
             return [
-                unit
-                for unit in self._units
-                if unit.type == ValueTypes.CONTAINER_VALUE
+                unit for unit in self._units if unit.type == ValueTypes.CONTAINER_VALUE
             ]
         return self._units.copy()
 
@@ -215,6 +219,6 @@ class ContainerValue(Value):
         """Get first child with given name."""
         return self.get_value(key)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Value]:
         """Iterate over child values."""
         return iter(self._units)

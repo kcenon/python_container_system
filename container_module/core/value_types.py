@@ -28,8 +28,8 @@ class ValueTypes(Enum):
     - ULLONG_VALUE: 64-bit unsigned integer (code: "9")
     - FLOAT_VALUE: 32-bit floating point (code: "10")
     - DOUBLE_VALUE: 64-bit floating point (code: "11")
-    - BYTES_VALUE: Raw byte array (code: "12")
-    - STRING_VALUE: UTF-8 string (code: "13")
+    - STRING_VALUE: UTF-8 string (code: "12") - matches C++ std::string position
+    - BYTES_VALUE: Raw byte array (code: "13") - matches C++ std::vector<uint8_t> position
     - CONTAINER_VALUE: Nested container (code: "14")
     - ARRAY_VALUE: Array/list of values (code: "15")
     """
@@ -46,8 +46,10 @@ class ValueTypes(Enum):
     ULLONG_VALUE = 9
     FLOAT_VALUE = 10
     DOUBLE_VALUE = 11
-    BYTES_VALUE = 12
-    STRING_VALUE = 13
+    STRING_VALUE = 12  # Matches C++ string_value and ValueVariant std::string position
+    BYTES_VALUE = (
+        13  # Matches C++ bytes_value and ValueVariant std::vector<uint8_t> position
+    )
     CONTAINER_VALUE = 14
     ARRAY_VALUE = 15
 
@@ -66,8 +68,8 @@ _TYPE_MAP: Dict[str, ValueTypes] = {
     "9": ValueTypes.ULLONG_VALUE,
     "10": ValueTypes.FLOAT_VALUE,
     "11": ValueTypes.DOUBLE_VALUE,
-    "12": ValueTypes.BYTES_VALUE,
-    "13": ValueTypes.STRING_VALUE,
+    "12": ValueTypes.STRING_VALUE,  # Matches C++ string_value position
+    "13": ValueTypes.BYTES_VALUE,  # Matches C++ bytes_value position
     "14": ValueTypes.CONTAINER_VALUE,
     "15": ValueTypes.ARRAY_VALUE,
 }

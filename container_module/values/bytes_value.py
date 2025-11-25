@@ -119,6 +119,6 @@ class BytesValue(Value):
         """Python bytes conversion."""
         return self._value
 
-    def __getitem__(self, index: int) -> int:
+    def __getitem__(self, index: int) -> int:  # type: ignore[override]
         """Get byte at index."""
         return self._value[index]

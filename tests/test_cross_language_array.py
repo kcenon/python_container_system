@@ -96,11 +96,13 @@ class TestCrossLanguageArray(unittest.TestCase):
 
         wire_data = container.serialize()
 
-        # Verify header format
+        # Verify header format - uses numeric IDs for C++ compatibility
+        # 1=target_id, 2=target_sub_id, 3=source_id, 4=source_sub_id,
+        # 5=message_type, 6=version
         self.assertIn("@header={{", wire_data)
-        self.assertIn("[source_id,python_test]", wire_data)  # source_id
-        self.assertIn("[source_sub_id,array_test]", wire_data)   # source_sub_id
-        self.assertIn("[message_type,test_data]", wire_data)    # message_type
+        self.assertIn("[3,python_test]", wire_data)  # source_id (ID=3)
+        self.assertIn("[4,array_test]", wire_data)  # source_sub_id (ID=4)
+        self.assertIn("[5,test_data]", wire_data)  # message_type (ID=5)
 
         # Verify data format
         self.assertIn("@data={{", wire_data)
@@ -122,10 +124,10 @@ class TestCrossLanguageArray(unittest.TestCase):
         wire_data = original.serialize()
 
         # Expected format that C++/Rust/Go can parse:
-        # @header={{[message_type,array_test];[6,1.0.0.0];}};@data={{[test,15,3];}};
+        # @header={{[5,array_test];[6,1.0.0.0];}};@data={{[test,15,3];}};
         expected_parts = [
             "@header={{",
-            "[message_type,array_test]",
+            "[5,array_test]",  # message_type uses numeric ID=5
             "@data={{",
             "[test,15,3]",
         ]

@@ -9,9 +9,20 @@ import pytest
 import struct
 from container_module import ValueContainer, ValueTypes
 from container_module.values import (
-    BoolValue, ShortValue, UShortValue, IntValue, UIntValue,
-    LongValue, ULongValue, LLongValue, ULLongValue,
-    FloatValue, DoubleValue, StringValue, BytesValue, ContainerValue
+    BoolValue,
+    ShortValue,
+    UShortValue,
+    IntValue,
+    UIntValue,
+    LongValue,
+    ULongValue,
+    LLongValue,
+    ULLongValue,
+    FloatValue,
+    DoubleValue,
+    StringValue,
+    BytesValue,
+    ContainerValue,
 )
 
 
@@ -68,9 +79,9 @@ class TestNumericBoundaries:
         """Test float special values (inf, -inf, nan)."""
         import math
 
-        inf_val = FloatValue("inf", float('inf'))
-        neg_inf_val = FloatValue("neg_inf", float('-inf'))
-        nan_val = FloatValue("nan", float('nan'))
+        inf_val = FloatValue("inf", float("inf"))
+        neg_inf_val = FloatValue("neg_inf", float("-inf"))
+        nan_val = FloatValue("nan", float("nan"))
 
         assert math.isinf(inf_val.to_float())
         assert math.isinf(neg_inf_val.to_float())
@@ -173,10 +184,7 @@ class TestContainerEdgeCases:
 
     def test_empty_container(self):
         """Test container with no values."""
-        container = ValueContainer(
-            source_id="src",
-            target_id="tgt"
-        )
+        container = ValueContainer(source_id="src", target_id="tgt")
         serialized = container.serialize()
         restored = ValueContainer(data_string=serialized)
 
@@ -221,7 +229,7 @@ class TestContainerEdgeCases:
         container = ValueContainer(
             source_id="src_with_underscores",
             target_id="tgt_double",
-            message_type="type_with_underscores"
+            message_type="type_with_underscores",
         )
 
         serialized = container.serialize()
@@ -236,7 +244,7 @@ class TestContainerEdgeCases:
             source_id="client",
             source_sub_id="client_sub",
             target_id="server",
-            target_sub_id="server_sub"
+            target_sub_id="server_sub",
         )
 
         container.swap_header()
@@ -277,7 +285,7 @@ class TestSerializationEdgeCases:
         serialized = container.serialize()
 
         # Truncate data
-        partial = serialized[:len(serialized)//2]
+        partial = serialized[: len(serialized) // 2]
 
         # Partial data may not raise exception
         try:
@@ -317,6 +325,7 @@ class TestJSONEdgeCases:
         json_str = container.to_json()
         # Should be valid JSON (escaped properly)
         import json
+
         parsed = json.loads(json_str)
         assert parsed is not None
 
@@ -327,7 +336,7 @@ class TestXMLEdgeCases:
     def test_xml_special_chars(self):
         """Test XML with special characters."""
         container = ValueContainer()
-        container.add(StringValue("special", "Less<Greater>Ampersand&Quote\""))
+        container.add(StringValue("special", 'Less<Greater>Ampersand&Quote"'))
 
         xml_str = container.to_xml()
         # Should escape XML special characters

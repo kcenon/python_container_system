@@ -28,7 +28,7 @@ Unified JSON v2.0 Format:
     "values": [
       {
         "name": "username",
-        "type": 13,
+        "type": 12,
         "type_name": "string",
         "data": "john_doe"
       }
@@ -304,60 +304,59 @@ class JsonV2Adapter:
         except ValueError:
             # Try type_name if type ID is invalid
             type_name = value_data.get("type_name", "")
-            value_type = cls.REVERSE_TYPE_NAME_MAP.get(
-                type_name, ValueTypes.NULL_VALUE
-            )
+            value_type = cls.REVERSE_TYPE_NAME_MAP.get(type_name, ValueTypes.NULL_VALUE)
 
         # Create appropriate Value subclass
         try:
             if value_type == ValueTypes.NULL_VALUE:
-                from container_module.values import NullValue
-
-                return Value(name)  # Base Value class represents null
+                # NULL_VALUE represented as empty StringValue
+                return StringValue(name, "")
 
             elif value_type == ValueTypes.BOOL_VALUE:
-                return BoolValue(name, bool(data))
+                return BoolValue(name, bool(data) if data is not None else False)
 
             elif value_type == ValueTypes.SHORT_VALUE:
-                return ShortValue(name, int(data))
+                return ShortValue(name, int(data) if data is not None else 0)
 
             elif value_type == ValueTypes.USHORT_VALUE:
-                return UShortValue(name, int(data))
+                return UShortValue(name, int(data) if data is not None else 0)
 
             elif value_type == ValueTypes.INT_VALUE:
-                return IntValue(name, int(data))
+                return IntValue(name, int(data) if data is not None else 0)
 
             elif value_type == ValueTypes.UINT_VALUE:
-                return UIntValue(name, int(data))
+                return UIntValue(name, int(data) if data is not None else 0)
 
             elif value_type == ValueTypes.LONG_VALUE:
-                return LongValue(name, int(data))
+                return LongValue(name, int(data) if data is not None else 0)
 
             elif value_type == ValueTypes.ULONG_VALUE:
-                return ULongValue(name, int(data))
+                return ULongValue(name, int(data) if data is not None else 0)
 
             elif value_type == ValueTypes.LLONG_VALUE:
-                return LLongValue(name, int(data))
+                return LLongValue(name, int(data) if data is not None else 0)
 
             elif value_type == ValueTypes.ULLONG_VALUE:
-                return ULLongValue(name, int(data))
+                return ULLongValue(name, int(data) if data is not None else 0)
 
             elif value_type == ValueTypes.FLOAT_VALUE:
-                return FloatValue(name, float(data))
+                return FloatValue(name, float(data) if data is not None else 0.0)
 
             elif value_type == ValueTypes.DOUBLE_VALUE:
-                return DoubleValue(name, float(data))
+                return DoubleValue(name, float(data) if data is not None else 0.0)
 
             elif value_type == ValueTypes.STRING_VALUE:
-                return StringValue(name, str(data))
+                return StringValue(name, str(data) if data is not None else "")
 
             elif value_type == ValueTypes.BYTES_VALUE:
                 # Decode base64
+                if data is None:
+                    return BytesValue(name, b"")
                 encoding = value_data.get("encoding", "base64")
                 if encoding == "base64":
-                    bytes_data = base64.b64decode(data)
+                    bytes_data = base64.b64decode(str(data))
                 else:
-                    bytes_data = bytes(data, "utf-8")
+                    bytes_data = bytes(str(data), "utf-8")
                 return BytesValue(name, bytes_data)
 
             elif value_type == ValueTypes.CONTAINER_VALUE:
@@ -614,8 +613,10 @@ class JsonV2Adapter:
             return cls.to_cpp_json(container, pretty)
         elif target_format == "python":
             # Use container's built-in to_json()
-            return container.to_json() if not pretty else json.dumps(
-                json.loads(container.to_json()), indent=2
+            return (
+                container.to_json()
+                if not pretty
+                else json.dumps(json.loads(container.to_json()), indent=2)
             )
         else:
             raise ValueError(f"Unsupported target format: {target_format}")

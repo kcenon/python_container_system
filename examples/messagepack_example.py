@@ -31,7 +31,7 @@ def main():
         "active": True,
         "score": 95.5,
         "tags": ["python", "coding", "messagepack"],
-        "metadata": {"level": 5, "experience": 1000}
+        "metadata": {"level": 5, "experience": 1000},
     }
 
     print(f"Original data: {data}")
@@ -40,7 +40,11 @@ def main():
     # Pack to MessagePack
     msgpack_bytes = MessagePackSerializer.pack(data)
     print(f"MessagePack bytes: {len(msgpack_bytes)} bytes")
-    print(f"Hex: {msgpack_bytes[:50].hex()}..." if len(msgpack_bytes) > 50 else msgpack_bytes.hex())
+    print(
+        f"Hex: {msgpack_bytes[:50].hex()}..."
+        if len(msgpack_bytes) > 50
+        else msgpack_bytes.hex()
+    )
     print()
 
     # Unpack from MessagePack
@@ -54,9 +58,7 @@ def main():
     print("-" * 70)
 
     container = ValueContainer(
-        source_id="client",
-        target_id="server",
-        message_type="request"
+        source_id="client", target_id="server", message_type="request"
     )
 
     container.add(StringValue("username", "alice"))
@@ -95,16 +97,22 @@ def main():
 
     # JSON format
     json_data = container.to_json()
-    json_bytes = json_data.encode('utf-8') if isinstance(json_data, str) else json_data
-    print(f"JSON format:        {len(json_bytes):>6} bytes  ({len(json_bytes)/len(binary_data):.1f}x)")
+    json_bytes = json_data.encode("utf-8") if isinstance(json_data, str) else json_data
+    print(
+        f"JSON format:        {len(json_bytes):>6} bytes  ({len(json_bytes)/len(binary_data):.1f}x)"
+    )
 
     # MessagePack format
-    print(f"MessagePack format: {len(msgpack_data):>6} bytes  ({len(msgpack_data)/len(binary_data):.1f}x)")
+    print(
+        f"MessagePack format: {len(msgpack_data):>6} bytes  ({len(msgpack_data)/len(binary_data):.1f}x)"
+    )
 
     # XML format
     xml_data = container.to_xml()
-    xml_bytes = xml_data.encode('utf-8') if isinstance(xml_data, str) else xml_data
-    print(f"XML format:         {len(xml_bytes):>6} bytes  ({len(xml_bytes)/len(binary_data):.1f}x)")
+    xml_bytes = xml_data.encode("utf-8") if isinstance(xml_data, str) else xml_data
+    print(
+        f"XML format:         {len(xml_bytes):>6} bytes  ({len(xml_bytes)/len(binary_data):.1f}x)"
+    )
     print()
 
     print("Summary:")

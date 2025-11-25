@@ -40,12 +40,12 @@ class NumericValue(Value, ABC):
         self._format_char = format_char
 
     @classmethod
-    def from_data(cls, name: str, data: bytes):
+    def from_data(cls, name: str, data: bytes) -> "NumericValue":
         """Create from raw bytes."""
         raise NotImplementedError("Subclasses must implement from_data")
 
     @classmethod
-    def from_string(cls, name: str, value_str: str):
+    def from_string(cls, name: str, value_str: str) -> "NumericValue":
         """Create from string."""
         raise NotImplementedError("Subclasses must implement from_string")
 
@@ -90,7 +90,7 @@ class ShortValue(NumericValue):
         return cls(name, int(value_str))
 
     def to_short(self) -> int:
-        return self._value
+        return int(self._value)
 
 
 class UShortValue(NumericValue):
@@ -109,7 +109,7 @@ class UShortValue(NumericValue):
         return cls(name, int(value_str))
 
     def to_ushort(self) -> int:
-        return self._value
+        return int(self._value)
 
 
 class IntValue(NumericValue):
@@ -144,7 +144,7 @@ class UIntValue(NumericValue):
         return cls(name, int(value_str))
 
     def to_uint(self) -> int:
-        return self._value
+        return int(self._value)
 
 
 class LongValue(NumericValue):
@@ -157,7 +157,7 @@ class LongValue(NumericValue):
     """
 
     # 32-bit signed range constants
-    INT32_MIN = -2**31
+    INT32_MIN = -(2**31)
     INT32_MAX = 2**31 - 1
 
     def __init__(self, name: str, value: int):
@@ -183,7 +183,7 @@ class LongValue(NumericValue):
         return cls(name, value)
 
     def to_long(self) -> int:
-        return self._value
+        return int(self._value)
 
 
 class ULongValue(NumericValue):
@@ -221,7 +221,7 @@ class ULongValue(NumericValue):
         return cls(name, value)
 
     def to_ulong(self) -> int:
-        return self._value
+        return int(self._value)
 
 
 class LLongValue(NumericValue):
@@ -240,7 +240,7 @@ class LLongValue(NumericValue):
         return cls(name, int(value_str))
 
     def to_llong(self) -> int:
-        return self._value
+        return int(self._value)
 
 
 class ULLongValue(NumericValue):
@@ -259,7 +259,7 @@ class ULLongValue(NumericValue):
         return cls(name, int(value_str))
 
     def to_ullong(self) -> int:
-        return self._value
+        return int(self._value)
 
 
 # Floating-point types
