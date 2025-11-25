@@ -18,6 +18,16 @@ from container_module.core.value import Value
 from container_module.core.value_types import ValueTypes, get_string_from_type
 
 
+# Header field IDs matching C++ container_module constants
+# These ensure cross-language compatibility with C++/.NET container systems
+TARGET_ID = 1
+TARGET_SUB_ID = 2
+SOURCE_ID = 3
+SOURCE_SUB_ID = 4
+MESSAGE_TYPE = 5
+MESSAGE_VERSION = 6
+
+
 class ValueContainer:
     """
     A high-level container for messages with source/target IDs,
@@ -282,7 +292,15 @@ class ValueContainer:
         """
         Serialize this container to C++ compatible format.
 
-        Format: @header={{[key,value];...}}@data={{[name,type,value];...}};
+        Format: @header={{[id,value];...}}@data={{[name,type,value];...}};
+
+        Header field IDs (matching C++):
+        - 1: TARGET_ID
+        - 2: TARGET_SUB_ID
+        - 3: SOURCE_ID
+        - 4: SOURCE_SUB_ID
+        - 5: MESSAGE_TYPE
+        - 6: MESSAGE_VERSION
 
         Returns:
             Serialized string representation
@@ -292,17 +310,17 @@ class ValueContainer:
             if not self._changed_data and self._data_string:
                 return self._data_string
 
-            # Build header section
+            # Build header section using numeric IDs for C++ compatibility
             header_items = []
             # Only include non-default values in header
             if self._message_type != self.DEFAULT_MESSAGE_TYPE:
-                header_items.append(f"[target_id,{self._target_id}];")
-                header_items.append(f"[target_sub_id,{self._target_sub_id}];")
-                header_items.append(f"[source_id,{self._source_id}];")
-                header_items.append(f"[source_sub_id,{self._source_sub_id}];")
+                header_items.append(f"[{TARGET_ID},{self._target_id}];")
+                header_items.append(f"[{TARGET_SUB_ID},{self._target_sub_id}];")
+                header_items.append(f"[{SOURCE_ID},{self._source_id}];")
+                header_items.append(f"[{SOURCE_SUB_ID},{self._source_sub_id}];")
 
-            header_items.append(f"[message_type,{self._message_type}];")
-            header_items.append(f"[version,{self._version}];")
+            header_items.append(f"[{MESSAGE_TYPE},{self._message_type}];")
+            header_items.append(f"[{MESSAGE_VERSION},{self._version}];")
 
             header = "@header={{" + "".join(header_items) + "}}"
 
@@ -329,7 +347,11 @@ class ValueContainer:
         """
         Deserialize from C++ compatible format.
 
-        Format: @header={{[key,value];...}}@data={{[name,type,value];...}};
+        Format: @header={{[id,value];...}}@data={{[name,type,value];...}};
+
+        Supports both:
+        - Numeric IDs (C++ format): [1,value], [2,value], etc.
+        - String keys (legacy Python format): [target_id,value], [source_id,value], etc.
 
         Args:
             data_string: Serialized data
@@ -359,12 +381,15 @@ class ValueContainer:
                     key, value = match.groups()
                     header_fields[key] = value
 
-                self._source_id = header_fields.get("source_id", "")
-                self._source_sub_id = header_fields.get("source_sub_id", "")
-                self._target_id = header_fields.get("target_id", "")
-                self._target_sub_id = header_fields.get("target_sub_id", "")
-                self._message_type = header_fields.get("message_type", self.DEFAULT_MESSAGE_TYPE)
-                self._version = header_fields.get("version", self.DEFAULT_VERSION)
+                # Support both numeric IDs (C++ format) and string keys (legacy format)
+                # Numeric ID mapping: 1=target_id, 2=target_sub_id, 3=source_id,
+                #                     4=source_sub_id, 5=message_type, 6=version
+                self._target_id = header_fields.get(str(TARGET_ID), header_fields.get("target_id", ""))
+                self._target_sub_id = header_fields.get(str(TARGET_SUB_ID), header_fields.get("target_sub_id", ""))
+                self._source_id = header_fields.get(str(SOURCE_ID), header_fields.get("source_id", ""))
+                self._source_sub_id = header_fields.get(str(SOURCE_SUB_ID), header_fields.get("source_sub_id", ""))
+                self._message_type = header_fields.get(str(MESSAGE_TYPE), header_fields.get("message_type", self.DEFAULT_MESSAGE_TYPE))
+                self._version = header_fields.get(str(MESSAGE_VERSION), header_fields.get("version", self.DEFAULT_VERSION))
 
                 # Parse @data section if requested
                 if not parse_only_header:
