@@ -17,7 +17,9 @@ class ContainerValue(Value):
     Allows hierarchical data structures.
     """
 
-    def __init__(self, name: str, units: Optional[Union[List[Value], "ValueContainer"]] = None):
+    def __init__(
+        self, name: str, units: Optional[Union[List[Value], "ValueContainer"]] = None
+    ):
         """
         Initialize a ContainerValue.
 
@@ -118,9 +120,7 @@ class ContainerValue(Value):
         """
         if only_container:
             return [
-                unit
-                for unit in self._units
-                if unit.type == ValueTypes.CONTAINER_VALUE
+                unit for unit in self._units if unit.type == ValueTypes.CONTAINER_VALUE
             ]
         return self._units.copy()
 

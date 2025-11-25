@@ -47,7 +47,9 @@ class ValueTypes(Enum):
     FLOAT_VALUE = 10
     DOUBLE_VALUE = 11
     STRING_VALUE = 12  # Matches C++ string_value and ValueVariant std::string position
-    BYTES_VALUE = 13   # Matches C++ bytes_value and ValueVariant std::vector<uint8_t> position
+    BYTES_VALUE = (
+        13  # Matches C++ bytes_value and ValueVariant std::vector<uint8_t> position
+    )
     CONTAINER_VALUE = 14
     ARRAY_VALUE = 15
 
@@ -67,7 +69,7 @@ _TYPE_MAP: Dict[str, ValueTypes] = {
     "10": ValueTypes.FLOAT_VALUE,
     "11": ValueTypes.DOUBLE_VALUE,
     "12": ValueTypes.STRING_VALUE,  # Matches C++ string_value position
-    "13": ValueTypes.BYTES_VALUE,   # Matches C++ bytes_value position
+    "13": ValueTypes.BYTES_VALUE,  # Matches C++ bytes_value position
     "14": ValueTypes.CONTAINER_VALUE,
     "15": ValueTypes.ARRAY_VALUE,
 }

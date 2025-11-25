@@ -215,7 +215,7 @@ class TestArrayValueSerialization:
         arr.append(StringValue("text", "test"))
 
         xml_str = arr.to_xml()
-        assert '<array' in xml_str
+        assert "<array" in xml_str
         assert 'name="items"' in xml_str
         assert 'count="2"' in xml_str
 

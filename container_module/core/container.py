@@ -311,16 +311,15 @@ class ValueContainer:
                 return self._data_string
 
             # Build header section using numeric IDs for C++ compatibility
-            header_items = []
-            # Only include non-default values in header
-            if self._message_type != self.DEFAULT_MESSAGE_TYPE:
-                header_items.append(f"[{TARGET_ID},{self._target_id}];")
-                header_items.append(f"[{TARGET_SUB_ID},{self._target_sub_id}];")
-                header_items.append(f"[{SOURCE_ID},{self._source_id}];")
-                header_items.append(f"[{SOURCE_SUB_ID},{self._source_sub_id}];")
-
-            header_items.append(f"[{MESSAGE_TYPE},{self._message_type}];")
-            header_items.append(f"[{MESSAGE_VERSION},{self._version}];")
+            # Always include all header fields for cross-language compatibility
+            header_items = [
+                f"[{TARGET_ID},{self._target_id}];",
+                f"[{TARGET_SUB_ID},{self._target_sub_id}];",
+                f"[{SOURCE_ID},{self._source_id}];",
+                f"[{SOURCE_SUB_ID},{self._source_sub_id}];",
+                f"[{MESSAGE_TYPE},{self._message_type}];",
+                f"[{MESSAGE_VERSION},{self._version}];",
+            ]
 
             header = "@header={{" + "".join(header_items) + "}}"
 
@@ -367,7 +366,7 @@ class ValueContainer:
                 self._data_string = data_string
 
                 # Parse @header section
-                header_pattern = r'@header=\s*\{\{(.*?)\}\}'
+                header_pattern = r"@header=\s*\{\{(.*?)\}\}"
                 header_match = re.search(header_pattern, data_string)
                 if not header_match:
                     return False
@@ -375,7 +374,7 @@ class ValueContainer:
                 header_content = header_match.group(1)
 
                 # Parse header items: [key,value];
-                item_pattern = r'\[([^,]+),\s*([^\]]*)\];'
+                item_pattern = r"\[([^,]+),\s*([^\]]*)\];"
                 header_fields = {}
                 for match in re.finditer(item_pattern, header_content):
                     key, value = match.groups()
@@ -384,16 +383,30 @@ class ValueContainer:
                 # Support both numeric IDs (C++ format) and string keys (legacy format)
                 # Numeric ID mapping: 1=target_id, 2=target_sub_id, 3=source_id,
                 #                     4=source_sub_id, 5=message_type, 6=version
-                self._target_id = header_fields.get(str(TARGET_ID), header_fields.get("target_id", ""))
-                self._target_sub_id = header_fields.get(str(TARGET_SUB_ID), header_fields.get("target_sub_id", ""))
-                self._source_id = header_fields.get(str(SOURCE_ID), header_fields.get("source_id", ""))
-                self._source_sub_id = header_fields.get(str(SOURCE_SUB_ID), header_fields.get("source_sub_id", ""))
-                self._message_type = header_fields.get(str(MESSAGE_TYPE), header_fields.get("message_type", self.DEFAULT_MESSAGE_TYPE))
-                self._version = header_fields.get(str(MESSAGE_VERSION), header_fields.get("version", self.DEFAULT_VERSION))
+                self._target_id = header_fields.get(
+                    str(TARGET_ID), header_fields.get("target_id", "")
+                )
+                self._target_sub_id = header_fields.get(
+                    str(TARGET_SUB_ID), header_fields.get("target_sub_id", "")
+                )
+                self._source_id = header_fields.get(
+                    str(SOURCE_ID), header_fields.get("source_id", "")
+                )
+                self._source_sub_id = header_fields.get(
+                    str(SOURCE_SUB_ID), header_fields.get("source_sub_id", "")
+                )
+                self._message_type = header_fields.get(
+                    str(MESSAGE_TYPE),
+                    header_fields.get("message_type", self.DEFAULT_MESSAGE_TYPE),
+                )
+                self._version = header_fields.get(
+                    str(MESSAGE_VERSION),
+                    header_fields.get("version", self.DEFAULT_VERSION),
+                )
 
                 # Parse @data section if requested
                 if not parse_only_header:
-                    data_pattern = r'@data=\s*\{\{?(.*?)\}\}?;'
+                    data_pattern = r"@data=\s*\{\{?(.*?)\}\}?;"
                     data_match = re.search(data_pattern, data_string)
                     if data_match:
                         data_content = data_match.group(1)
@@ -410,6 +423,7 @@ class ValueContainer:
         except Exception as e:
             print(f"Deserialization error: {e}")
             import traceback
+
             traceback.print_exc()
             return False
 
@@ -474,9 +488,11 @@ class ValueContainer:
         safe_data = data_part.replace("\\];", ESCAPED_DELIMITER)
 
         # Parse all items into a list first
-        item_pattern = r'\[([^,]+),\s*([^,]+),\s*(.*?)\];'
-        matches = [(m.group(1), m.group(2), m.group(3).replace(ESCAPED_DELIMITER, "];"))
-                   for m in re.finditer(item_pattern, safe_data)]
+        item_pattern = r"\[([^,]+),\s*([^,]+),\s*(.*?)\];"
+        matches = [
+            (m.group(1), m.group(2), m.group(3).replace(ESCAPED_DELIMITER, "];"))
+            for m in re.finditer(item_pattern, safe_data)
+        ]
 
         # Process matches recursively
         index_ref = [0]  # Use list for mutable reference
@@ -486,7 +502,9 @@ class ValueContainer:
 
             try:
                 value_type = get_type_from_string(type_str)
-                value = self._parse_value_recursive(matches, index_ref, name, value_type, value_str)
+                value = self._parse_value_recursive(
+                    matches, index_ref, name, value_type, value_str
+                )
 
                 if value:
                     self._units.append(value)
@@ -497,8 +515,14 @@ class ValueContainer:
 
             index_ref[0] += 1
 
-    def _parse_value_recursive(self, matches: List[tuple], index_ref: List[int],
-                                name: str, value_type: ValueTypes, value_str: str) -> Optional[Value]:
+    def _parse_value_recursive(
+        self,
+        matches: List[tuple],
+        index_ref: List[int],
+        name: str,
+        value_type: ValueTypes,
+        value_str: str,
+    ) -> Optional[Value]:
         """
         Recursively parse a value, handling nested containers.
 
@@ -531,8 +555,9 @@ class ValueContainer:
                     child_type = get_type_from_string(child_type_str)
 
                     # Recursively parse child (may be another container)
-                    child_val = self._parse_value_recursive(matches, index_ref,
-                                                             child_name, child_type, child_value_str)
+                    child_val = self._parse_value_recursive(
+                        matches, index_ref, child_name, child_type, child_value_str
+                    )
                     if child_val:
                         children.append(child_val)
 
@@ -542,7 +567,9 @@ class ValueContainer:
             # Create simple value
             return self._create_value(name, value_type, value_str)
 
-    def _create_value(self, name: str, value_type: ValueTypes, value_str: str) -> Optional[Value]:
+    def _create_value(
+        self, name: str, value_type: ValueTypes, value_str: str
+    ) -> Optional[Value]:
         """
         Helper method to create a value from type and string.
 
@@ -620,9 +647,7 @@ class ValueContainer:
                 "target_sub_id": self._target_sub_id,
                 "message_type": self._message_type,
                 "version": self._version,
-                "values": [
-                    json.loads(unit.to_json()) for unit in self._units
-                ],
+                "values": [json.loads(unit.to_json()) for unit in self._units],
             }
             return json.dumps(data, ensure_ascii=False, indent=2)
 

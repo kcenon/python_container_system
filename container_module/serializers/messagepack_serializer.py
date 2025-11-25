@@ -39,29 +39,29 @@ class MessagePackSerializer:
     """
 
     # MessagePack type codes
-    NIL = 0xc0
-    FALSE = 0xc2
-    TRUE = 0xc3
-    BIN8 = 0xc4
-    BIN16 = 0xc5
-    BIN32 = 0xc6
-    FLOAT32 = 0xca
-    FLOAT64 = 0xcb
-    UINT8 = 0xcc
-    UINT16 = 0xcd
-    UINT32 = 0xce
-    UINT64 = 0xcf
-    INT8 = 0xd0
-    INT16 = 0xd1
-    INT32 = 0xd2
-    INT64 = 0xd3
-    STR8 = 0xd9
-    STR16 = 0xda
-    STR32 = 0xdb
-    ARRAY16 = 0xdc
-    ARRAY32 = 0xdd
-    MAP16 = 0xde
-    MAP32 = 0xdf
+    NIL = 0xC0
+    FALSE = 0xC2
+    TRUE = 0xC3
+    BIN8 = 0xC4
+    BIN16 = 0xC5
+    BIN32 = 0xC6
+    FLOAT32 = 0xCA
+    FLOAT64 = 0xCB
+    UINT8 = 0xCC
+    UINT16 = 0xCD
+    UINT32 = 0xCE
+    UINT64 = 0xCF
+    INT8 = 0xD0
+    INT16 = 0xD1
+    INT32 = 0xD2
+    INT64 = 0xD3
+    STR8 = 0xD9
+    STR16 = 0xDA
+    STR32 = 0xDB
+    ARRAY16 = 0xDC
+    ARRAY32 = 0xDD
+    MAP16 = 0xDE
+    MAP32 = 0xDF
 
     @staticmethod
     def pack(obj: Any) -> bytes:
@@ -70,7 +70,9 @@ class MessagePackSerializer:
             return bytes([MessagePackSerializer.NIL])
 
         elif isinstance(obj, bool):
-            return bytes([MessagePackSerializer.TRUE if obj else MessagePackSerializer.FALSE])
+            return bytes(
+                [MessagePackSerializer.TRUE if obj else MessagePackSerializer.FALSE]
+            )
 
         elif isinstance(obj, int):
             return MessagePackSerializer._pack_int(obj)
@@ -96,19 +98,19 @@ class MessagePackSerializer:
     @staticmethod
     def _pack_int(n: int) -> bytes:
         """Pack an integer."""
-        if 0 <= n <= 0x7f:
+        if 0 <= n <= 0x7F:
             # Positive fixint
             return bytes([n])
         elif -32 <= n < 0:
             # Negative fixint
             return bytes([0x100 + n])
-        elif 0 <= n <= 0xff:
+        elif 0 <= n <= 0xFF:
             return bytes([MessagePackSerializer.UINT8, n])
-        elif 0 <= n <= 0xffff:
+        elif 0 <= n <= 0xFFFF:
             return bytes([MessagePackSerializer.UINT16]) + struct.pack(">H", n)
-        elif 0 <= n <= 0xffffffff:
+        elif 0 <= n <= 0xFFFFFFFF:
             return bytes([MessagePackSerializer.UINT32]) + struct.pack(">I", n)
-        elif 0 <= n <= 0xffffffffffffffff:
+        elif 0 <= n <= 0xFFFFFFFFFFFFFFFF:
             return bytes([MessagePackSerializer.UINT64]) + struct.pack(">Q", n)
         elif -0x80 <= n < 0:
             return bytes([MessagePackSerializer.INT8]) + struct.pack("b", n)
@@ -127,27 +129,31 @@ class MessagePackSerializer:
     @staticmethod
     def _pack_str(s: str) -> bytes:
         """Pack a string."""
-        data = s.encode('utf-8')
+        data = s.encode("utf-8")
         length = len(data)
 
         if length <= 31:
             # fixstr
-            return bytes([0xa0 | length]) + data
-        elif length <= 0xff:
+            return bytes([0xA0 | length]) + data
+        elif length <= 0xFF:
             return bytes([MessagePackSerializer.STR8, length]) + data
-        elif length <= 0xffff:
-            return bytes([MessagePackSerializer.STR16]) + struct.pack(">H", length) + data
+        elif length <= 0xFFFF:
+            return (
+                bytes([MessagePackSerializer.STR16]) + struct.pack(">H", length) + data
+            )
         else:
-            return bytes([MessagePackSerializer.STR32]) + struct.pack(">I", length) + data
+            return (
+                bytes([MessagePackSerializer.STR32]) + struct.pack(">I", length) + data
+            )
 
     @staticmethod
     def _pack_bin(b: bytes) -> bytes:
         """Pack binary data."""
         length = len(b)
 
-        if length <= 0xff:
+        if length <= 0xFF:
             return bytes([MessagePackSerializer.BIN8, length]) + b
-        elif length <= 0xffff:
+        elif length <= 0xFFFF:
             return bytes([MessagePackSerializer.BIN16]) + struct.pack(">H", length) + b
         else:
             return bytes([MessagePackSerializer.BIN32]) + struct.pack(">I", length) + b
@@ -160,12 +166,12 @@ class MessagePackSerializer:
         if length <= 15:
             # fixarray
             header = bytes([0x90 | length])
-        elif length <= 0xffff:
+        elif length <= 0xFFFF:
             header = bytes([MessagePackSerializer.ARRAY16]) + struct.pack(">H", length)
         else:
             header = bytes([MessagePackSerializer.ARRAY32]) + struct.pack(">I", length)
 
-        return header + b''.join(MessagePackSerializer.pack(item) for item in arr)
+        return header + b"".join(MessagePackSerializer.pack(item) for item in arr)
 
     @staticmethod
     def _pack_map(m: dict) -> bytes:
@@ -175,12 +181,12 @@ class MessagePackSerializer:
         if length <= 15:
             # fixmap
             header = bytes([0x80 | length])
-        elif length <= 0xffff:
+        elif length <= 0xFFFF:
             header = bytes([MessagePackSerializer.MAP16]) + struct.pack(">H", length)
         else:
             header = bytes([MessagePackSerializer.MAP32]) + struct.pack(">I", length)
 
-        items = b''.join(
+        items = b"".join(
             MessagePackSerializer.pack(k) + MessagePackSerializer.pack(v)
             for k, v in m.items()
         )
@@ -203,11 +209,11 @@ class MessagePackSerializer:
         offset += 1
 
         # Positive fixint
-        if 0x00 <= code <= 0x7f:
+        if 0x00 <= code <= 0x7F:
             return code, offset
 
         # Negative fixint
-        elif 0xe0 <= code <= 0xff:
+        elif 0xE0 <= code <= 0xFF:
             return code - 0x100, offset
 
         # nil
@@ -224,76 +230,85 @@ class MessagePackSerializer:
         elif code == MessagePackSerializer.UINT8:
             return data[offset], offset + 1
         elif code == MessagePackSerializer.UINT16:
-            return struct.unpack(">H", data[offset:offset+2])[0], offset + 2
+            return struct.unpack(">H", data[offset : offset + 2])[0], offset + 2
         elif code == MessagePackSerializer.UINT32:
-            return struct.unpack(">I", data[offset:offset+4])[0], offset + 4
+            return struct.unpack(">I", data[offset : offset + 4])[0], offset + 4
         elif code == MessagePackSerializer.UINT64:
-            return struct.unpack(">Q", data[offset:offset+8])[0], offset + 8
+            return struct.unpack(">Q", data[offset : offset + 8])[0], offset + 8
 
         # signed ints
         elif code == MessagePackSerializer.INT8:
-            return struct.unpack("b", data[offset:offset+1])[0], offset + 1
+            return struct.unpack("b", data[offset : offset + 1])[0], offset + 1
         elif code == MessagePackSerializer.INT16:
-            return struct.unpack(">h", data[offset:offset+2])[0], offset + 2
+            return struct.unpack(">h", data[offset : offset + 2])[0], offset + 2
         elif code == MessagePackSerializer.INT32:
-            return struct.unpack(">i", data[offset:offset+4])[0], offset + 4
+            return struct.unpack(">i", data[offset : offset + 4])[0], offset + 4
         elif code == MessagePackSerializer.INT64:
-            return struct.unpack(">q", data[offset:offset+8])[0], offset + 8
+            return struct.unpack(">q", data[offset : offset + 8])[0], offset + 8
 
         # floats
         elif code == MessagePackSerializer.FLOAT32:
-            return struct.unpack(">f", data[offset:offset+4])[0], offset + 4
+            return struct.unpack(">f", data[offset : offset + 4])[0], offset + 4
         elif code == MessagePackSerializer.FLOAT64:
-            return struct.unpack(">d", data[offset:offset+8])[0], offset + 8
+            return struct.unpack(">d", data[offset : offset + 8])[0], offset + 8
 
         # strings
-        elif 0xa0 <= code <= 0xbf:
+        elif 0xA0 <= code <= 0xBF:
             # fixstr
-            length = code & 0x1f
-            return data[offset:offset+length].decode('utf-8'), offset + length
+            length = code & 0x1F
+            return data[offset : offset + length].decode("utf-8"), offset + length
         elif code == MessagePackSerializer.STR8:
             length = data[offset]
-            return data[offset+1:offset+1+length].decode('utf-8'), offset + 1 + length
+            return (
+                data[offset + 1 : offset + 1 + length].decode("utf-8"),
+                offset + 1 + length,
+            )
         elif code == MessagePackSerializer.STR16:
-            length = struct.unpack(">H", data[offset:offset+2])[0]
-            return data[offset+2:offset+2+length].decode('utf-8'), offset + 2 + length
+            length = struct.unpack(">H", data[offset : offset + 2])[0]
+            return (
+                data[offset + 2 : offset + 2 + length].decode("utf-8"),
+                offset + 2 + length,
+            )
         elif code == MessagePackSerializer.STR32:
-            length = struct.unpack(">I", data[offset:offset+4])[0]
-            return data[offset+4:offset+4+length].decode('utf-8'), offset + 4 + length
+            length = struct.unpack(">I", data[offset : offset + 4])[0]
+            return (
+                data[offset + 4 : offset + 4 + length].decode("utf-8"),
+                offset + 4 + length,
+            )
 
         # binary
         elif code == MessagePackSerializer.BIN8:
             length = data[offset]
-            return data[offset+1:offset+1+length], offset + 1 + length
+            return data[offset + 1 : offset + 1 + length], offset + 1 + length
         elif code == MessagePackSerializer.BIN16:
-            length = struct.unpack(">H", data[offset:offset+2])[0]
-            return data[offset+2:offset+2+length], offset + 2 + length
+            length = struct.unpack(">H", data[offset : offset + 2])[0]
+            return data[offset + 2 : offset + 2 + length], offset + 2 + length
         elif code == MessagePackSerializer.BIN32:
-            length = struct.unpack(">I", data[offset:offset+4])[0]
-            return data[offset+4:offset+4+length], offset + 4 + length
+            length = struct.unpack(">I", data[offset : offset + 4])[0]
+            return data[offset + 4 : offset + 4 + length], offset + 4 + length
 
         # arrays
-        elif 0x90 <= code <= 0x9f:
+        elif 0x90 <= code <= 0x9F:
             # fixarray
-            length = code & 0x0f
+            length = code & 0x0F
             return MessagePackSerializer._unpack_array(data, offset, length)
         elif code == MessagePackSerializer.ARRAY16:
-            length = struct.unpack(">H", data[offset:offset+2])[0]
+            length = struct.unpack(">H", data[offset : offset + 2])[0]
             return MessagePackSerializer._unpack_array(data, offset + 2, length)
         elif code == MessagePackSerializer.ARRAY32:
-            length = struct.unpack(">I", data[offset:offset+4])[0]
+            length = struct.unpack(">I", data[offset : offset + 4])[0]
             return MessagePackSerializer._unpack_array(data, offset + 4, length)
 
         # maps
-        elif 0x80 <= code <= 0x8f:
+        elif 0x80 <= code <= 0x8F:
             # fixmap
-            length = code & 0x0f
+            length = code & 0x0F
             return MessagePackSerializer._unpack_map(data, offset, length)
         elif code == MessagePackSerializer.MAP16:
-            length = struct.unpack(">H", data[offset:offset+2])[0]
+            length = struct.unpack(">H", data[offset : offset + 2])[0]
             return MessagePackSerializer._unpack_map(data, offset + 2, length)
         elif code == MessagePackSerializer.MAP32:
-            length = struct.unpack(">I", data[offset:offset+4])[0]
+            length = struct.unpack(">I", data[offset : offset + 4])[0]
             return MessagePackSerializer._unpack_map(data, offset + 4, length)
 
         else:
@@ -333,7 +348,7 @@ class MessagePackSerializer:
             "target_id": container.target_id,
             "target_sub_id": container.target_sub_id,
             "message_type": container.message_type,
-            "version": container.version
+            "version": container.version,
         }
 
         values_list = []
@@ -341,14 +356,11 @@ class MessagePackSerializer:
             value_dict = {
                 "name": unit.name,
                 "type": str(unit.type.value),
-                "data": unit.data
+                "data": unit.data,
             }
             values_list.append(value_dict)
 
-        container_dict = {
-            "header": header,
-            "values": values_list
-        }
+        container_dict = {"header": header, "values": values_list}
 
         return MessagePackSerializer.pack(container_dict)
 
@@ -397,7 +409,7 @@ class MessagePackSerializer:
             source_sub_id=header.get("source_sub_id", ""),
             target_id=header.get("target_id", ""),
             target_sub_id=header.get("target_sub_id", ""),
-            message_type=header.get("message_type", "")
+            message_type=header.get("message_type", ""),
         )
 
         # Reconstruct values

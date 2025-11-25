@@ -304,9 +304,7 @@ class JsonV2Adapter:
         except ValueError:
             # Try type_name if type ID is invalid
             type_name = value_data.get("type_name", "")
-            value_type = cls.REVERSE_TYPE_NAME_MAP.get(
-                type_name, ValueTypes.NULL_VALUE
-            )
+            value_type = cls.REVERSE_TYPE_NAME_MAP.get(type_name, ValueTypes.NULL_VALUE)
 
         # Create appropriate Value subclass
         try:
@@ -614,8 +612,10 @@ class JsonV2Adapter:
             return cls.to_cpp_json(container, pretty)
         elif target_format == "python":
             # Use container's built-in to_json()
-            return container.to_json() if not pretty else json.dumps(
-                json.loads(container.to_json()), indent=2
+            return (
+                container.to_json()
+                if not pretty
+                else json.dumps(json.loads(container.to_json()), indent=2)
             )
         else:
             raise ValueError(f"Unsupported target format: {target_format}")

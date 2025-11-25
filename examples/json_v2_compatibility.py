@@ -353,7 +353,7 @@ def example_7_all_value_types():
     container.add(ULLongValue("ullong_value", 18446744073709551615))
     container.add(FloatValue("float_value", 3.14159))
     container.add(DoubleValue("double_value", 2.718281828459045))
-    container.add(BytesValue("bytes_value", b"\x00\x01\x02\x03\xFF"))
+    container.add(BytesValue("bytes_value", b"\x00\x01\x02\x03\xff"))
     container.add(StringValue("string_value", "Hello, World!"))
 
     nested = ContainerValue("container_value")

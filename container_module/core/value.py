@@ -133,9 +133,7 @@ class Value(ABC):
         """
         if only_container:
             return [
-                unit
-                for unit in self._units
-                if unit.type == ValueTypes.CONTAINER_VALUE
+                unit for unit in self._units if unit.type == ValueTypes.CONTAINER_VALUE
             ]
         return self._units.copy()
 

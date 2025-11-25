@@ -157,7 +157,7 @@ class LongValue(NumericValue):
     """
 
     # 32-bit signed range constants
-    INT32_MIN = -2**31
+    INT32_MIN = -(2**31)
     INT32_MAX = 2**31 - 1
 
     def __init__(self, name: str, value: int):

@@ -110,7 +110,9 @@ class ArrayValue(Value):
             IndexError: If index is out of range
         """
         if index < 0 or index >= len(self._values):
-            raise IndexError(f"ArrayValue index {index} out of range (size: {len(self._values)})")
+            raise IndexError(
+                f"ArrayValue index {index} out of range (size: {len(self._values)})"
+            )
         return self._values[index]
 
     def size(self) -> int:
@@ -214,7 +216,9 @@ class ArrayValue(Value):
     def __setitem__(self, index: int, value: Value) -> None:
         """Set element at index."""
         if index < 0 or index >= len(self._values):
-            raise IndexError(f"ArrayValue index {index} out of range (size: {len(self._values)})")
+            raise IndexError(
+                f"ArrayValue index {index} out of range (size: {len(self._values)})"
+            )
         value.set_parent(self)
         self._values[index] = value
 

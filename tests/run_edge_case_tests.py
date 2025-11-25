@@ -12,8 +12,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from container_module import ValueContainer
 from container_module.values import (
-    ShortValue, IntValue, FloatValue, DoubleValue,
-    StringValue, BytesValue
+    ShortValue,
+    IntValue,
+    FloatValue,
+    DoubleValue,
+    StringValue,
+    BytesValue,
 )
 
 
@@ -29,7 +33,8 @@ def test_numeric_boundaries():
 
     # Float special values
     import math
-    inf_val = FloatValue("inf", float('inf'))
+
+    inf_val = FloatValue("inf", float("inf"))
     assert math.isinf(inf_val.to_float())
 
     print("  ✓ Numeric boundaries passed")
@@ -115,7 +120,7 @@ def test_container_edge_cases():
         source_id="client",
         source_sub_id="c_sub",
         target_id="server",
-        target_sub_id="s_sub"
+        target_sub_id="s_sub",
     )
     swap.swap_header()
     assert swap.source_id == "server"

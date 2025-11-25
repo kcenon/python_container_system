@@ -48,8 +48,10 @@ class TestValueContainer:
     def test_swap_header(self):
         """Test swapping source and target."""
         container = ValueContainer(
-            source_id="src", source_sub_id="src_sub",
-            target_id="tgt", target_sub_id="tgt_sub",
+            source_id="src",
+            source_sub_id="src_sub",
+            target_id="tgt",
+            target_sub_id="tgt_sub",
         )
         container.swap_header()
 
