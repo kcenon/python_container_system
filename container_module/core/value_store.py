@@ -25,7 +25,11 @@ from threading import RLock
 from pathlib import Path
 
 from container_module.core.value import Value
-from container_module.core.value_types import ValueTypes, get_string_from_type, get_type_from_string
+from container_module.core.value_types import (
+    ValueTypes,
+    get_string_from_type,
+    get_type_from_string,
+)
 
 
 class ValueStore:
@@ -244,13 +248,13 @@ class ValueStore:
 
                 # Number of entries
                 count = len(self._values)
-                result.extend(struct.pack('<I', count))
+                result.extend(struct.pack("<I", count))
 
                 # Serialize each key-value pair
                 for key, value in self._values.items():
                     # Key length and key
-                    key_bytes = key.encode('utf-8')
-                    result.extend(struct.pack('<I', len(key_bytes)))
+                    key_bytes = key.encode("utf-8")
+                    result.extend(struct.pack("<I", len(key_bytes)))
                     result.extend(key_bytes)
 
                     # Value type (access via .type property which returns ValueTypes enum)
@@ -258,7 +262,7 @@ class ValueStore:
 
                     # Value data (access via .data property or .to_bytes())
                     value_data = value.data
-                    result.extend(struct.pack('<I', len(value_data)))
+                    result.extend(struct.pack("<I", len(value_data)))
                     result.extend(value_data)
 
                 return bytes(result)
@@ -280,9 +284,19 @@ class ValueStore:
             RuntimeError: If deserialization fails
         """
         from container_module.values import (
-            BoolValue, ShortValue, UShortValue, IntValue, UIntValue,
-            LongValue, ULongValue, LLongValue, ULLongValue,
-            FloatValue, DoubleValue, StringValue, BytesValue,
+            BoolValue,
+            ShortValue,
+            UShortValue,
+            IntValue,
+            UIntValue,
+            LongValue,
+            ULongValue,
+            LLongValue,
+            ULLongValue,
+            FloatValue,
+            DoubleValue,
+            StringValue,
+            BytesValue,
         )
 
         try:
@@ -290,10 +304,10 @@ class ValueStore:
             data = json.loads(json_data)
 
             for key, value_data in data.items():
-                if isinstance(value_data, dict) and 'type' in value_data:
-                    value_type_str = value_data.get('type', '')
+                if isinstance(value_data, dict) and "type" in value_data:
+                    value_type_str = value_data.get("type", "")
                     value_type = get_type_from_string(value_type_str)
-                    value_content = value_data.get('data', value_data.get('value', ''))
+                    value_content = value_data.get("data", value_data.get("value", ""))
 
                     value = cls._create_value_from_type(key, value_type, value_content)
                     if value:
@@ -338,7 +352,7 @@ class ValueStore:
                 raise RuntimeError(f"Unsupported version: {version}")
 
             # Read number of entries
-            count = struct.unpack_from('<I', binary_data, offset)[0]
+            count = struct.unpack_from("<I", binary_data, offset)[0]
             offset += 4
 
             # Read each key-value pair
@@ -347,14 +361,14 @@ class ValueStore:
                     raise RuntimeError(f"Truncated data at entry {i}")
 
                 # Read key length
-                key_len = struct.unpack_from('<I', binary_data, offset)[0]
+                key_len = struct.unpack_from("<I", binary_data, offset)[0]
                 offset += 4
 
                 if offset + key_len + 5 > len(binary_data):
                     raise RuntimeError("Truncated key data")
 
                 # Read key
-                key = binary_data[offset:offset + key_len].decode('utf-8')
+                key = binary_data[offset : offset + key_len].decode("utf-8")
                 offset += key_len
 
                 # Read value type
@@ -363,14 +377,14 @@ class ValueStore:
                 value_type = ValueTypes(value_type_code)
 
                 # Read value length
-                value_len = struct.unpack_from('<I', binary_data, offset)[0]
+                value_len = struct.unpack_from("<I", binary_data, offset)[0]
                 offset += 4
 
                 if offset + value_len > len(binary_data):
                     raise RuntimeError("Truncated value data")
 
                 # Read value data
-                value_data = binary_data[offset:offset + value_len]
+                value_data = binary_data[offset : offset + value_len]
                 offset += value_len
 
                 # Create value from binary data
@@ -383,12 +397,24 @@ class ValueStore:
             raise RuntimeError(f"Binary deserialization failed: {e}") from e
 
     @staticmethod
-    def _create_value_from_type(name: str, value_type: ValueTypes, value_str: str) -> Optional[Value]:
+    def _create_value_from_type(
+        name: str, value_type: ValueTypes, value_str: str
+    ) -> Optional[Value]:
         """Create a Value from type enum and string data."""
         from container_module.values import (
-            BoolValue, ShortValue, UShortValue, IntValue, UIntValue,
-            LongValue, ULongValue, LLongValue, ULLongValue,
-            FloatValue, DoubleValue, StringValue, BytesValue,
+            BoolValue,
+            ShortValue,
+            UShortValue,
+            IntValue,
+            UIntValue,
+            LongValue,
+            ULongValue,
+            LLongValue,
+            ULLongValue,
+            FloatValue,
+            DoubleValue,
+            StringValue,
+            BytesValue,
         )
 
         try:
@@ -427,7 +453,10 @@ class ValueStore:
     def _create_value_from_json(name: str, value: Any) -> Optional[Value]:
         """Create a Value by inferring type from JSON value."""
         from container_module.values import (
-            BoolValue, IntValue, DoubleValue, StringValue,
+            BoolValue,
+            IntValue,
+            DoubleValue,
+            StringValue,
         )
 
         try:
@@ -445,12 +474,24 @@ class ValueStore:
             return None
 
     @staticmethod
-    def _create_value_from_binary(name: str, value_type: ValueTypes, data: bytes) -> Optional[Value]:
+    def _create_value_from_binary(
+        name: str, value_type: ValueTypes, data: bytes
+    ) -> Optional[Value]:
         """Create a Value from type enum and binary data."""
         from container_module.values import (
-            BoolValue, ShortValue, UShortValue, IntValue, UIntValue,
-            LongValue, ULongValue, LLongValue, ULLongValue,
-            FloatValue, DoubleValue, StringValue, BytesValue,
+            BoolValue,
+            ShortValue,
+            UShortValue,
+            IntValue,
+            UIntValue,
+            LongValue,
+            ULongValue,
+            LLongValue,
+            ULLongValue,
+            FloatValue,
+            DoubleValue,
+            StringValue,
+            BytesValue,
         )
 
         try:
@@ -501,7 +542,7 @@ class ValueStore:
         if binary:
             path.write_bytes(self.serialize_binary())
         else:
-            path.write_text(self.serialize(), encoding='utf-8')
+            path.write_text(self.serialize(), encoding="utf-8")
 
     @classmethod
     def load_from_file(cls, file_path: str, binary: bool = False) -> "ValueStore":
@@ -519,7 +560,7 @@ class ValueStore:
         if binary:
             return cls.deserialize_binary(path.read_bytes())
         else:
-            return cls.deserialize(path.read_text(encoding='utf-8'))
+            return cls.deserialize(path.read_text(encoding="utf-8"))
 
     # =========================================================================
     # Thread Safety

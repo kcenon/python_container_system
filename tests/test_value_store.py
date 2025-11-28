@@ -225,7 +225,7 @@ class TestValueStoreFileIO:
         store.add("user", StringValue("user", "Bob"))
         store.add("score", IntValue("score", 100))
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             temp_path = f.name
 
         try:
@@ -242,7 +242,7 @@ class TestValueStoreFileIO:
         store.add("data", BytesValue("data", bytes([1, 2, 3, 4, 5])))
         store.add("label", StringValue("label", "binary test"))
 
-        with tempfile.NamedTemporaryFile(mode='wb', suffix='.bin', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="wb", suffix=".bin", delete=False) as f:
             temp_path = f.name
 
         try:
