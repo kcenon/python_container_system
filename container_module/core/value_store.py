@@ -309,7 +309,11 @@ class ValueStore:
                     value_type = get_type_from_string(value_type_str)
                     value_content = value_data.get("data", value_data.get("value", ""))
 
-                    value = cls._create_value_from_type(key, value_type, value_content)
+                    value = cls._create_value_from_type(
+                        key,
+                        value_type,
+                        str(value_content) if value_content is not None else "",
+                    )
                     if value:
                         store._values[key] = value
                 else:
