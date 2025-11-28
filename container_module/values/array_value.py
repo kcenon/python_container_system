@@ -44,38 +44,246 @@ class ArrayValue(Value):
         """
         Create ArrayValue from serialized bytes.
 
+        Binary format for array data:
+        [count:4 LE][element1_type:1][element1_name_len:4][element1_name][element1_data_len:4][element1_data]...
+
         Args:
             name: The name/key
-            data: Serialized data
+            data: Serialized data containing count followed by serialized elements
 
         Returns:
             New ArrayValue instance
-
-        Note:
-            This requires full binary deserialization support.
-            Currently returns empty array as placeholder.
         """
-        # TODO: Implement full binary deserialization
-        return cls(name, [])
+        import struct
+        from container_module.core.value_types import ValueTypes
+
+        if len(data) < 4:
+            return cls(name, [])
+
+        offset = 0
+        count = struct.unpack("<I", data[offset : offset + 4])[0]
+        offset += 4
+
+        values: List[Value] = []
+        for _ in range(count):
+            if offset >= len(data):
+                break
+
+            # Read element type
+            if offset + 1 > len(data):
+                break
+            elem_type = ValueTypes(data[offset])
+            offset += 1
+
+            # Read element name length
+            if offset + 4 > len(data):
+                break
+            elem_name_len = struct.unpack("<I", data[offset : offset + 4])[0]
+            offset += 4
+
+            # Read element name
+            if offset + elem_name_len > len(data):
+                break
+            elem_name = data[offset : offset + elem_name_len].decode("utf-8")
+            offset += elem_name_len
+
+            # Read element data length
+            if offset + 4 > len(data):
+                break
+            elem_data_len = struct.unpack("<I", data[offset : offset + 4])[0]
+            offset += 4
+
+            # Read element data
+            if offset + elem_data_len > len(data):
+                break
+            elem_data = data[offset : offset + elem_data_len]
+            offset += elem_data_len
+
+            # Create element using factory
+            value = cls._create_value_from_binary(elem_name, elem_type, elem_data)
+            if value:
+                values.append(value)
+
+        return cls(name, values)
 
     @classmethod
     def from_string(cls, name: str, value_str: str) -> "ArrayValue":
         """
         Create ArrayValue from serialized string.
 
+        Text format: The value_str contains the serialized elements after the header.
+        Each element is in format [name,type,data]; or [name,type,count]; for complex types.
+
         Args:
             name: The name/key
-            value_str: Serialized string
+            value_str: Serialized string containing element data
 
         Returns:
             New ArrayValue instance
-
-        Note:
-            This requires full text deserialization support.
-            Currently returns empty array as placeholder.
         """
-        # TODO: Implement full text deserialization
-        return cls(name, [])
+        import re
+        from container_module.core.value_types import get_type_from_string
+
+        if not value_str:
+            return cls(name, [])
+
+        values: List[Value] = []
+
+        # Parse elements in format [name,type,data]; or [name,type,count];...
+        # Use regex to find bracketed elements
+        pattern = r"\[([^\]]+)\];"
+        matches = re.findall(pattern, value_str)
+
+        for match in matches:
+            parts = match.split(",", 2)
+            if len(parts) >= 3:
+                elem_name = parts[0]
+                elem_type = get_type_from_string(parts[1])
+                elem_data = parts[2]
+
+                value = cls._create_value_from_string(elem_name, elem_type, elem_data)
+                if value:
+                    values.append(value)
+
+        return cls(name, values)
+
+    @staticmethod
+    def _create_value_from_binary(
+        name: str, value_type: "ValueTypes", data: bytes
+    ) -> Optional[Value]:
+        """
+        Factory method to create a Value from binary data.
+
+        Args:
+            name: The value name
+            value_type: The ValueType enum
+            data: Binary data for the value
+
+        Returns:
+            Created Value or None if type not supported
+        """
+        from container_module.core.value_types import ValueTypes
+        from container_module.values import (
+            BoolValue,
+            ShortValue,
+            UShortValue,
+            IntValue,
+            UIntValue,
+            LongValue,
+            ULongValue,
+            LLongValue,
+            ULLongValue,
+            FloatValue,
+            DoubleValue,
+            StringValue,
+            BytesValue,
+            ContainerValue,
+        )
+
+        try:
+            if value_type == ValueTypes.BOOL_VALUE:
+                return BoolValue.from_data(name, data)
+            elif value_type == ValueTypes.SHORT_VALUE:
+                return ShortValue.from_data(name, data)
+            elif value_type == ValueTypes.USHORT_VALUE:
+                return UShortValue.from_data(name, data)
+            elif value_type == ValueTypes.INT_VALUE:
+                return IntValue.from_data(name, data)
+            elif value_type == ValueTypes.UINT_VALUE:
+                return UIntValue.from_data(name, data)
+            elif value_type == ValueTypes.LONG_VALUE:
+                return LongValue.from_data(name, data)
+            elif value_type == ValueTypes.ULONG_VALUE:
+                return ULongValue.from_data(name, data)
+            elif value_type == ValueTypes.LLONG_VALUE:
+                return LLongValue.from_data(name, data)
+            elif value_type == ValueTypes.ULLONG_VALUE:
+                return ULLongValue.from_data(name, data)
+            elif value_type == ValueTypes.FLOAT_VALUE:
+                return FloatValue.from_data(name, data)
+            elif value_type == ValueTypes.DOUBLE_VALUE:
+                return DoubleValue.from_data(name, data)
+            elif value_type == ValueTypes.STRING_VALUE:
+                return StringValue.from_data(name, data)
+            elif value_type == ValueTypes.BYTES_VALUE:
+                return BytesValue.from_data(name, data)
+            elif value_type == ValueTypes.CONTAINER_VALUE:
+                return ContainerValue.from_data(name, data)
+            elif value_type == ValueTypes.ARRAY_VALUE:
+                return ArrayValue.from_data(name, data)
+            else:
+                return None
+        except Exception:
+            return None
+
+    @staticmethod
+    def _create_value_from_string(
+        name: str, value_type: "ValueTypes", value_str: str
+    ) -> Optional[Value]:
+        """
+        Factory method to create a Value from string data.
+
+        Args:
+            name: The value name
+            value_type: The ValueType enum
+            value_str: String data for the value
+
+        Returns:
+            Created Value or None if type not supported
+        """
+        from container_module.core.value_types import ValueTypes
+        from container_module.values import (
+            BoolValue,
+            ShortValue,
+            UShortValue,
+            IntValue,
+            UIntValue,
+            LongValue,
+            ULongValue,
+            LLongValue,
+            ULLongValue,
+            FloatValue,
+            DoubleValue,
+            StringValue,
+            BytesValue,
+            ContainerValue,
+        )
+
+        try:
+            if value_type == ValueTypes.BOOL_VALUE:
+                return BoolValue.from_string(name, value_str)
+            elif value_type == ValueTypes.SHORT_VALUE:
+                return ShortValue.from_string(name, value_str)
+            elif value_type == ValueTypes.USHORT_VALUE:
+                return UShortValue.from_string(name, value_str)
+            elif value_type == ValueTypes.INT_VALUE:
+                return IntValue.from_string(name, value_str)
+            elif value_type == ValueTypes.UINT_VALUE:
+                return UIntValue.from_string(name, value_str)
+            elif value_type == ValueTypes.LONG_VALUE:
+                return LongValue.from_string(name, value_str)
+            elif value_type == ValueTypes.ULONG_VALUE:
+                return ULongValue.from_string(name, value_str)
+            elif value_type == ValueTypes.LLONG_VALUE:
+                return LLongValue.from_string(name, value_str)
+            elif value_type == ValueTypes.ULLONG_VALUE:
+                return ULLongValue.from_string(name, value_str)
+            elif value_type == ValueTypes.FLOAT_VALUE:
+                return FloatValue.from_string(name, value_str)
+            elif value_type == ValueTypes.DOUBLE_VALUE:
+                return DoubleValue.from_string(name, value_str)
+            elif value_type == ValueTypes.STRING_VALUE:
+                return StringValue.from_string(name, value_str)
+            elif value_type == ValueTypes.BYTES_VALUE:
+                return BytesValue.from_string(name, value_str)
+            elif value_type == ValueTypes.CONTAINER_VALUE:
+                return ContainerValue.from_string(name, value_str)
+            elif value_type == ValueTypes.ARRAY_VALUE:
+                return ArrayValue.from_string(name, value_str)
+            else:
+                return None
+        except Exception:
+            return None
 
     def append(self, value: Value) -> None:
         """
