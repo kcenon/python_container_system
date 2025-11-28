@@ -90,6 +90,7 @@ disable = [
     "C0325",  # superfluous-parens
     "C0413",  # wrong-import-position
     "C0415",  # import-outside-toplevel
+    "R0401",  # cyclic-import (false positive for lazy imports in functions)
     "R0801",  # duplicate-code
     "R0902",  # too-many-instance-attributes
     "R0904",  # too-many-public-methods
