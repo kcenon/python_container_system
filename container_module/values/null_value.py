@@ -116,6 +116,7 @@ class NullValue(Value):
             JSON string with name, type, and null value
         """
         import json
+
         return json.dumps({"name": self._name, "type": "null", "value": None})
 
     def to_xml(self) -> str:

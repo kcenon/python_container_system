@@ -43,6 +43,7 @@ class TestNullValue:
     def test_to_json(self):
         """Test JSON conversion."""
         import json
+
         null_val = NullValue("json_field")
         json_str = null_val.to_json()
         json_dict = json.loads(json_str)
