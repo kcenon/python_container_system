@@ -108,14 +108,15 @@ class NullValue(Value):
         type_code = get_string_from_type(self._type)
         return f"[{self._name},{type_code},null];"
 
-    def to_json(self) -> dict:
+    def to_json(self) -> str:
         """
-        Convert to JSON-compatible dictionary.
+        Convert to JSON string representation.
 
         Returns:
-            Dictionary with name, type, and null value
+            JSON string with name, type, and null value
         """
-        return {"name": self._name, "type": "null", "value": None}
+        import json
+        return json.dumps({"name": self._name, "type": "null", "value": None})
 
     def to_xml(self) -> str:
         """

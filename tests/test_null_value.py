@@ -42,8 +42,10 @@ class TestNullValue:
 
     def test_to_json(self):
         """Test JSON conversion."""
+        import json
         null_val = NullValue("json_field")
-        json_dict = null_val.to_json()
+        json_str = null_val.to_json()
+        json_dict = json.loads(json_str)
         assert json_dict["name"] == "json_field"
         assert json_dict["type"] == "null"
         assert json_dict["value"] is None
