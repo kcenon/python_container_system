@@ -1,6 +1,6 @@
 # Python Container System Project Structure
 
-**Last Updated**: 2025-11-26
+**Last Updated**: 2025-12-17
 
 ## Overview
 
@@ -28,6 +28,12 @@ python_container_system/
 │   │   └── array_value.py         # Homogeneous arrays
 │   ├── 📁 utilities/              # Utility functions
 │   │   └── __init__.py            # Utility exports
+│   ├── 📁 messaging/              # Messaging utilities
+│   │   ├── __init__.py            # Messaging exports
+│   │   └── builder.py             # MessagingBuilder class
+│   ├── 📁 di/                     # Dependency Injection support
+│   │   ├── __init__.py            # DI exports
+│   │   └── adapters.py            # Factory and serializer interfaces
 │   ├── 📁 adapters/               # Cross-language adapters
 │   │   ├── __init__.py            # Adapter exports
 │   │   └── json_v2_adapter.py     # JSON v2.0 adapter
@@ -41,12 +47,15 @@ python_container_system/
 │   ├── test_thread_safety.py      # Threading tests
 │   ├── test_edge_cases.py         # Edge case tests
 │   ├── test_long_range_checking.py  # Range validation tests
+│   ├── test_messaging_builder.py  # MessagingBuilder tests
+│   ├── test_di_adapters.py        # DI adapters tests
 │   └── run_edge_case_tests.py     # Simple test runner
 ├── 📁 examples/                   # Example programs
 │   ├── basic_usage.py             # Basic usage example
 │   ├── advanced_usage.py          # Advanced features
 │   ├── array_value_example.py     # Array value usage
-│   └── messagepack_example.py     # MessagePack serialization
+│   ├── messagepack_example.py     # MessagePack serialization
+│   └── di_example.py              # Dependency Injection example
 ├── 📁 benchmarks/                 # Performance benchmarks
 │   ├── performance_benchmark.py   # Benchmark script
 │   └── PERFORMANCE_REPORT.md      # Benchmark results
@@ -257,6 +266,69 @@ class IntValue(NumericValue):
 - Efficient array storage
 - Integration with JSON v2.0 format
 - Index-based access
+
+### Messaging (`container_module/messaging/`)
+
+#### `builder.py`
+**Purpose**: Builder pattern for container creation
+
+**Features**:
+- Fluent API for container construction
+- Method chaining support
+- Builder reuse with reset()
+- Support for source, target, and message type configuration
+
+**Public Interface**:
+```python
+class MessagingBuilder:
+    def set_source(self, source_id: str, source_sub_id: str = "") -> MessagingBuilder: ...
+    def set_target(self, target_id: str, target_sub_id: str = "") -> MessagingBuilder: ...
+    def set_type(self, message_type: str) -> MessagingBuilder: ...
+    def add_value(self, value: Value) -> MessagingBuilder: ...
+    def add_values(self, values: List[Value]) -> MessagingBuilder: ...
+    def build(self) -> ValueContainer: ...
+    def reset(self) -> MessagingBuilder: ...
+```
+
+### Dependency Injection (`container_module/di/`)
+
+#### `adapters.py`
+**Purpose**: DI-compatible factory and serializer interfaces
+
+**Features**:
+- Protocol-based interfaces for loose coupling
+- Default implementations for common use cases
+- Framework integration support (FastAPI, etc.)
+- Testability with mock factories
+
+**Public Interface**:
+```python
+# Protocols (Interfaces)
+class IContainerFactory(Protocol):
+    def create(self, source_id: str = "", ...) -> ValueContainer: ...
+    def create_with_values(self, values: List[Value], ...) -> ValueContainer: ...
+    def create_from_serialized(self, data: str, ...) -> ValueContainer: ...
+    def create_builder(self) -> MessagingBuilder: ...
+
+class IContainerSerializer(Protocol):
+    def serialize(self, container: ValueContainer) -> str: ...
+    def serialize_bytes(self, container: ValueContainer) -> bytes: ...
+    def deserialize(self, data: str, ...) -> ValueContainer: ...
+    def deserialize_bytes(self, data: bytes, ...) -> ValueContainer: ...
+
+# Default Implementations
+class DefaultContainerFactory:
+    """Standard container factory implementation."""
+    ...
+
+class DefaultContainerSerializer:
+    """Standard serialization implementation."""
+    ...
+
+# Convenience Functions
+def serialize_container(container: ValueContainer) -> str: ...
+def deserialize_container(data: str, parse_only_header: bool = True) -> ValueContainer: ...
+```
 
 ### Adapters (`container_module/adapters/`)
 
@@ -582,5 +654,5 @@ target-version = ['py38']
 
 ---
 
-**Last Updated**: 2025-11-26
-**Version**: 1.1.0
+**Last Updated**: 2025-12-17
+**Version**: 1.3.0

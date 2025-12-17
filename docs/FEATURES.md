@@ -1,6 +1,6 @@
 # Python Container System Features
 
-**Last Updated**: 2025-11-26
+**Last Updated**: 2025-12-17
 
 ## Overview
 
@@ -120,6 +120,136 @@ address.add(StringValue("zip", "98101"))
 ```
 
 ## Enhanced Features
+
+### Builder Pattern (MessagingBuilder)
+
+The MessagingBuilder provides a fluent API for creating ValueContainer instances with clean, chainable method calls.
+
+**Features**:
+- **Fluent API** for clean, readable container construction
+- **Method chaining** for setting source, target, type, and values
+- **Builder reuse** with reset() method
+- **Batch value addition** with add_values()
+
+```python
+from container_module import MessagingBuilder
+from container_module.values import StringValue, IntValue
+
+# Fluent container creation
+container = (
+    MessagingBuilder()
+    .set_source("client1", "session1")
+    .set_target("server1", "handler1")
+    .set_type("request")
+    .add_value(StringValue("name", "John"))
+    .add_value(IntValue("age", 30))
+    .build()
+)
+
+# Builder reuse
+builder = MessagingBuilder()
+container1 = builder.set_source("src1").set_type("type1").build()
+container2 = builder.reset().set_source("src2").set_type("type2").build()
+
+# Batch value addition
+container = (
+    MessagingBuilder()
+    .set_source("client")
+    .add_values([
+        StringValue("name", "Alice"),
+        IntValue("age", 25),
+        StringValue("email", "alice@example.com")
+    ])
+    .build()
+)
+```
+
+### Dependency Injection Support
+
+The DI module provides protocol-based interfaces for container creation and serialization, enabling loose coupling and testability in modern Python applications.
+
+**Features**:
+- **IContainerFactory Protocol** for container creation abstraction
+- **IContainerSerializer Protocol** for serialization abstraction
+- **DefaultContainerFactory** implementation for standard use cases
+- **DefaultContainerSerializer** implementation for standard serialization
+- **Framework integration** support (FastAPI, Dependency Injector, etc.)
+- **Testability** with mock factories
+
+```python
+from container_module import (
+    IContainerFactory,
+    DefaultContainerFactory,
+    DefaultContainerSerializer,
+)
+from container_module.values import StringValue, IntValue
+
+# Basic factory usage
+factory = DefaultContainerFactory()
+container = factory.create(
+    source_id="client1",
+    target_id="server1",
+    message_type="request"
+)
+
+# Create with pre-populated values
+container = factory.create_with_values(
+    values=[StringValue("name", "John"), IntValue("age", 30)],
+    source_id="client1",
+    message_type="user_data"
+)
+
+# Use builder via factory
+container = (
+    factory.create_builder()
+    .set_source("client1")
+    .set_target("server1")
+    .add_value(StringValue("data", "value"))
+    .build()
+)
+
+# Serialization via serializer
+serializer = DefaultContainerSerializer()
+data = serializer.serialize(container)
+restored = serializer.deserialize(data, parse_only_header=False)
+
+# FastAPI integration
+from fastapi import Depends
+
+def get_container_factory() -> IContainerFactory:
+    return DefaultContainerFactory()
+
+@app.post("/messages")
+async def create_message(
+    factory: IContainerFactory = Depends(get_container_factory)
+):
+    container = factory.create(message_type="response")
+    # ...
+```
+
+**Testing with Mock Factory**:
+```python
+class MockContainerFactory:
+    """Mock factory for testing."""
+
+    def __init__(self):
+        self.created_containers = []
+
+    def create(self, **kwargs):
+        container = ValueContainer(**kwargs)
+        self.created_containers.append(container)
+        return container
+
+    def create_builder(self):
+        return MessagingBuilder()
+
+# Use in tests
+def test_message_service():
+    mock_factory = MockContainerFactory()
+    service = MessageService(factory=mock_factory)
+    service.send_message("Hello")
+    assert len(mock_factory.created_containers) == 1
+```
 
 ### JSON v2.0 Adapter
 - **Cross-language compatibility** with C++, .NET, Go implementations
@@ -588,5 +718,5 @@ channel.basic_consume(queue='task_queue', on_message_callback=callback)
 
 ---
 
-**Last Updated**: 2025-11-26
-**Version**: 1.1.0
+**Last Updated**: 2025-12-17
+**Version**: 1.3.0

@@ -128,6 +128,73 @@ xml_str = container.to_xml()
 print(xml_str)
 ```
 
+### 빌더 패턴
+
+```python
+from container_module import MessagingBuilder
+from container_module.values import StringValue, IntValue
+
+# fluent API를 사용한 컨테이너 생성
+container = (
+    MessagingBuilder()
+    .set_source("client1", "session1")
+    .set_target("server1", "handler1")
+    .set_type("request")
+    .add_value(StringValue("name", "John"))
+    .add_value(IntValue("age", 30))
+    .build()
+)
+
+# 빌더는 reset 후 재사용 가능
+builder = MessagingBuilder()
+container1 = builder.set_source("src1").set_type("type1").build()
+container2 = builder.reset().set_source("src2").set_type("type2").build()
+```
+
+### 의존성 주입 (Dependency Injection)
+
+```python
+from container_module import IContainerFactory, DefaultContainerFactory
+from container_module.values import StringValue, IntValue
+
+# DI를 위한 팩토리 패턴 사용
+factory = DefaultContainerFactory()
+container = factory.create(
+    source_id="client1",
+    target_id="server1",
+    message_type="request"
+)
+
+# 값이 미리 채워진 컨테이너 생성
+container = factory.create_with_values(
+    values=[StringValue("name", "John"), IntValue("age", 30)],
+    source_id="client1",
+    message_type="user_data"
+)
+
+# 팩토리를 통한 빌더 사용
+container = (
+    factory.create_builder()
+    .set_source("client1")
+    .set_target("server1")
+    .add_value(StringValue("data", "value"))
+    .build()
+)
+
+# FastAPI 통합 예제
+from fastapi import Depends
+
+def get_container_factory() -> IContainerFactory:
+    return DefaultContainerFactory()
+
+@app.post("/messages")
+async def create_message(
+    factory: IContainerFactory = Depends(get_container_factory)
+):
+    container = factory.create(message_type="response")
+    # ...
+```
+
 ### 스레드 안전 연산
 
 ```python
@@ -165,13 +232,28 @@ python_container_system/
 │   │   ├── string_value.py     # 문자열 값
 │   │   ├── bytes_value.py      # 바이트 배열 값
 │   │   └── container_value.py  # 중첩 컨테이너
+│   ├── messaging/              # 메시징 유틸리티
+│   │   ├── __init__.py         # 메시징 exports
+│   │   └── builder.py          # MessagingBuilder 클래스
+│   ├── di/                     # 의존성 주입 지원
+│   │   ├── __init__.py         # DI exports
+│   │   └── adapters.py         # 팩토리 및 시리얼라이저 인터페이스
 │   └── utilities/              # 유틸리티 함수
 ├── tests/                      # 테스트 스위트
+│   ├── test_value_types.py     # 타입 시스템 테스트
+│   ├── test_container.py       # 컨테이너 테스트
+│   ├── test_values.py          # 값 테스트
+│   ├── test_messaging_builder.py  # MessagingBuilder 테스트
+│   └── test_di_adapters.py     # DI 어댑터 테스트
 ├── examples/                   # 예제 프로그램
+│   ├── basic_usage.py          # 기본 사용 예제
+│   ├── advanced_usage.py       # 고급 기능 예제
+│   └── di_example.py           # 의존성 주입 예제
 ├── docs/                       # 문서
 ├── setup.py                    # 설치 스크립트
 ├── pyproject.toml              # 프로젝트 설정
-└── README.md                   # 이 파일
+├── README.md                   # 영문 README
+└── LICENSE                     # BSD 3-Clause 라이선스
 ```
 
 ## API 레퍼런스
@@ -239,6 +321,50 @@ from container_module.values import (
     BytesValue,         # 원시 바이트 배열
     ContainerValue,     # 중첩 컨테이너
 )
+```
+
+### MessagingBuilder
+
+```python
+from container_module import MessagingBuilder
+
+class MessagingBuilder:
+    """fluent ValueContainer 생성을 위한 빌더."""
+
+    def set_source(self, source_id: str, source_sub_id: str = "") -> MessagingBuilder: ...
+    def set_target(self, target_id: str, target_sub_id: str = "") -> MessagingBuilder: ...
+    def set_type(self, message_type: str) -> MessagingBuilder: ...
+    def add_value(self, value: Value) -> MessagingBuilder: ...
+    def add_values(self, values: List[Value]) -> MessagingBuilder: ...
+    def build(self) -> ValueContainer: ...
+    def reset(self) -> MessagingBuilder: ...
+```
+
+### 의존성 주입
+
+```python
+from container_module import (
+    IContainerFactory,       # 컨테이너 생성 프로토콜
+    IContainerSerializer,    # 직렬화 프로토콜
+    DefaultContainerFactory, # 기본 팩토리 구현
+    DefaultContainerSerializer,  # 기본 시리얼라이저 구현
+)
+
+class IContainerFactory(Protocol):
+    """ValueContainer 인스턴스 생성을 위한 프로토콜."""
+
+    def create(self, source_id: str = "", ...) -> ValueContainer: ...
+    def create_with_values(self, values: List[Value], ...) -> ValueContainer: ...
+    def create_from_serialized(self, data: str, ...) -> ValueContainer: ...
+    def create_builder(self) -> MessagingBuilder: ...
+
+class IContainerSerializer(Protocol):
+    """컨테이너 직렬화/역직렬화를 위한 프로토콜."""
+
+    def serialize(self, container: ValueContainer) -> str: ...
+    def serialize_bytes(self, container: ValueContainer) -> bytes: ...
+    def deserialize(self, data: str, ...) -> ValueContainer: ...
+    def deserialize_bytes(self, data: bytes, ...) -> ValueContainer: ...
 ```
 
 ## 개발

@@ -151,6 +151,50 @@ container1 = builder.set_source("src1").set_type("type1").build()
 container2 = builder.reset().set_source("src2").set_type("type2").build()
 ```
 
+### Dependency Injection
+
+```python
+from container_module import IContainerFactory, DefaultContainerFactory
+from container_module.values import StringValue, IntValue
+
+# Use factory pattern for DI
+factory = DefaultContainerFactory()
+container = factory.create(
+    source_id="client1",
+    target_id="server1",
+    message_type="request"
+)
+
+# Create container with pre-populated values
+container = factory.create_with_values(
+    values=[StringValue("name", "John"), IntValue("age", 30)],
+    source_id="client1",
+    message_type="user_data"
+)
+
+# Use builder via factory
+container = (
+    factory.create_builder()
+    .set_source("client1")
+    .set_target("server1")
+    .add_value(StringValue("data", "value"))
+    .build()
+)
+
+# FastAPI integration example
+from fastapi import Depends
+
+def get_container_factory() -> IContainerFactory:
+    return DefaultContainerFactory()
+
+@app.post("/messages")
+async def create_message(
+    factory: IContainerFactory = Depends(get_container_factory)
+):
+    container = factory.create(message_type="response")
+    # ...
+```
+
 ### Thread-Safe Operations
 
 ```python
@@ -188,14 +232,23 @@ python_container_system/
 │   │   ├── string_value.py     # String values
 │   │   ├── bytes_value.py      # Byte array values
 │   │   └── container_value.py  # Nested containers
+│   ├── messaging/              # Messaging utilities
+│   │   ├── __init__.py         # Messaging exports
+│   │   └── builder.py          # MessagingBuilder class
+│   ├── di/                     # Dependency Injection support
+│   │   ├── __init__.py         # DI exports
+│   │   └── adapters.py         # Factory and serializer interfaces
 │   └── utilities/              # Utility functions
 ├── tests/                      # Test suite
 │   ├── test_value_types.py     # Type system tests
 │   ├── test_container.py       # Container tests
-│   └── test_values.py          # Value tests
+│   ├── test_values.py          # Value tests
+│   ├── test_messaging_builder.py  # MessagingBuilder tests
+│   └── test_di_adapters.py     # DI adapters tests
 ├── examples/                   # Example programs
 │   ├── basic_usage.py          # Basic usage example
-│   └── advanced_usage.py       # Advanced features
+│   ├── advanced_usage.py       # Advanced features
+│   └── di_example.py           # Dependency Injection example
 ├── docs/                       # Documentation
 ├── setup.py                    # Setup script
 ├── pyproject.toml              # Project configuration
@@ -268,6 +321,50 @@ from container_module.values import (
     BytesValue,         # Raw byte array
     ContainerValue,     # Nested container
 )
+```
+
+### MessagingBuilder
+
+```python
+from container_module import MessagingBuilder
+
+class MessagingBuilder:
+    """Builder for fluent ValueContainer creation."""
+
+    def set_source(self, source_id: str, source_sub_id: str = "") -> MessagingBuilder: ...
+    def set_target(self, target_id: str, target_sub_id: str = "") -> MessagingBuilder: ...
+    def set_type(self, message_type: str) -> MessagingBuilder: ...
+    def add_value(self, value: Value) -> MessagingBuilder: ...
+    def add_values(self, values: List[Value]) -> MessagingBuilder: ...
+    def build(self) -> ValueContainer: ...
+    def reset(self) -> MessagingBuilder: ...
+```
+
+### Dependency Injection
+
+```python
+from container_module import (
+    IContainerFactory,       # Protocol for container creation
+    IContainerSerializer,    # Protocol for serialization
+    DefaultContainerFactory, # Default factory implementation
+    DefaultContainerSerializer,  # Default serializer implementation
+)
+
+class IContainerFactory(Protocol):
+    """Protocol for creating ValueContainer instances."""
+
+    def create(self, source_id: str = "", ...) -> ValueContainer: ...
+    def create_with_values(self, values: List[Value], ...) -> ValueContainer: ...
+    def create_from_serialized(self, data: str, ...) -> ValueContainer: ...
+    def create_builder(self) -> MessagingBuilder: ...
+
+class IContainerSerializer(Protocol):
+    """Protocol for serializing/deserializing containers."""
+
+    def serialize(self, container: ValueContainer) -> str: ...
+    def serialize_bytes(self, container: ValueContainer) -> bytes: ...
+    def deserialize(self, data: str, ...) -> ValueContainer: ...
+    def deserialize_bytes(self, data: bytes, ...) -> ValueContainer: ...
 ```
 
 ## Development
