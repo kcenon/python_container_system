@@ -7,6 +7,8 @@ to support modern Python application architectures.
 Equivalent to C++ Kcenon module DI patterns.
 """
 
+# pylint: disable=unnecessary-ellipsis
+
 from __future__ import annotations
 from typing import Protocol, Optional, List, runtime_checkable
 
