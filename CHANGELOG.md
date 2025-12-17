@@ -23,6 +23,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2025-12-17
+
+### Added
+- **MessagingBuilder Pattern**: Fluent API for ValueContainer creation
+  - New module: `container_module/messaging/builder.py`
+  - `MessagingBuilder` class with method chaining support
+  - Methods: `set_source()`, `set_target()`, `set_type()`, `add_value()`, `add_values()`, `build()`, `reset()`
+  - Simplifies complex message header configuration
+  - Equivalent to C++ messaging builder pattern
+  - Unit tests: `tests/test_messaging_builder.py` (14 test cases)
+
+### Usage Example
+```python
+from container_module import MessagingBuilder
+from container_module.values import StringValue, IntValue
+
+container = (
+    MessagingBuilder()
+    .set_source("client1", "session1")
+    .set_target("server1", "handler1")
+    .set_type("request")
+    .add_value(StringValue("name", "John"))
+    .add_value(IntValue("age", 30))
+    .build()
+)
+```
+
+---
+
 ## [1.1.0] - 2025-10-26
 
 ### Added
