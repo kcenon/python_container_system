@@ -149,7 +149,9 @@ def deserialization_from_factory():
 
     print(f"Original source: {original.source_id}")
     print(f"Restored source: {restored.source_id}")
-    print(f"Data matches: {original.get_value('data').to_string() == restored.get_value('data').to_string()}\n")
+    print(
+        f"Data matches: {original.get_value('data').to_string() == restored.get_value('data').to_string()}\n"
+    )
 
 
 class MockContainerFactory:
@@ -243,15 +245,21 @@ def protocol_compliance_example():
 
     # Check if DefaultContainerFactory implements IContainerFactory
     factory = DefaultContainerFactory()
-    print(f"DefaultContainerFactory is IContainerFactory: {isinstance(factory, IContainerFactory)}")
+    print(
+        f"DefaultContainerFactory is IContainerFactory: {isinstance(factory, IContainerFactory)}"
+    )
 
     # Check if DefaultContainerSerializer implements IContainerSerializer
     serializer = DefaultContainerSerializer()
-    print(f"DefaultContainerSerializer is IContainerSerializer: {isinstance(serializer, IContainerSerializer)}")
+    print(
+        f"DefaultContainerSerializer is IContainerSerializer: {isinstance(serializer, IContainerSerializer)}"
+    )
 
     # Check mock factory (also implements protocol via duck typing)
     mock_factory = MockContainerFactory()
-    print(f"MockContainerFactory is IContainerFactory: {isinstance(mock_factory, IContainerFactory)}")
+    print(
+        f"MockContainerFactory is IContainerFactory: {isinstance(mock_factory, IContainerFactory)}"
+    )
     print()
 
 
