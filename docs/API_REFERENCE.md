@@ -1,6 +1,6 @@
 # python_container_system API Reference
 
-> **Version**: 1.2.0
+> **Version**: 1.3.0
 > **Last Updated**: 2025-12-17
 > **Status**: Production Ready
 
@@ -9,9 +9,10 @@
 1. [Namespace](#namespace)
 2. [ValueContainer](#valuecontainer)
 3. [MessagingBuilder](#messagingbuilder)
-4. [Value Types](#value-types)
-5. [Serialization](#serialization)
-6. [Adapters](#adapters)
+4. [Dependency Injection](#dependency-injection)
+5. [Value Types](#value-types)
+6. [Serialization](#serialization)
+7. [Adapters](#adapters)
 
 ---
 
@@ -614,6 +615,200 @@ response = builder.reset().set_source("server").set_type("response").build()
 
 ---
 
+## Dependency Injection
+
+### Overview
+
+**Module**: `from container_module.di import IContainerFactory, DefaultContainerFactory`
+
+**Description**: DI-compatible factory classes for modern Python application architectures
+
+### IContainerFactory Protocol
+
+```python
+@runtime_checkable
+class IContainerFactory(Protocol):
+    """
+    Protocol (interface) for creating ValueContainer instances.
+
+    Provides an abstraction for container creation that can be
+    injected into application components, enabling loose coupling
+    and testability.
+    """
+
+    def create(
+        self,
+        source_id: str = "",
+        source_sub_id: str = "",
+        target_id: str = "",
+        target_sub_id: str = "",
+        message_type: str = "",
+    ) -> ValueContainer:
+        """Create a new ValueContainer instance."""
+        ...
+
+    def create_with_values(
+        self,
+        values: List[Value],
+        source_id: str = "",
+        target_id: str = "",
+        message_type: str = "",
+    ) -> ValueContainer:
+        """Create a ValueContainer with pre-populated values."""
+        ...
+
+    def create_from_serialized(
+        self,
+        data: str,
+        parse_only_header: bool = True,
+    ) -> ValueContainer:
+        """Create a ValueContainer from serialized data."""
+        ...
+
+    def create_builder(self) -> MessagingBuilder:
+        """Create a new MessagingBuilder for fluent container construction."""
+        ...
+```
+
+### IContainerSerializer Protocol
+
+```python
+@runtime_checkable
+class IContainerSerializer(Protocol):
+    """
+    Protocol (interface) for serializing/deserializing containers.
+
+    Provides an abstraction for container serialization that can be
+    injected into services requiring message encoding/decoding.
+    """
+
+    def serialize(self, container: ValueContainer) -> str:
+        """Serialize a container to string format."""
+        ...
+
+    def serialize_bytes(self, container: ValueContainer) -> bytes:
+        """Serialize a container to bytes."""
+        ...
+
+    def deserialize(self, data: str, parse_only_header: bool = True) -> ValueContainer:
+        """Deserialize a container from string data."""
+        ...
+
+    def deserialize_bytes(self, data: bytes, parse_only_header: bool = True) -> ValueContainer:
+        """Deserialize a container from bytes."""
+        ...
+```
+
+### DefaultContainerFactory
+
+```python
+class DefaultContainerFactory:
+    """
+    Default implementation of IContainerFactory.
+
+    Example:
+        factory = DefaultContainerFactory()
+        container = factory.create(
+            source_id="client1",
+            target_id="server1",
+            message_type="request"
+        )
+    """
+```
+
+### DefaultContainerSerializer
+
+```python
+class DefaultContainerSerializer:
+    """
+    Default implementation of IContainerSerializer.
+
+    Example:
+        serializer = DefaultContainerSerializer()
+        data = serializer.serialize(container)
+        restored = serializer.deserialize(data, parse_only_header=False)
+    """
+```
+
+### Convenience Functions
+
+```python
+def serialize_container(container: ValueContainer) -> str:
+    """
+    Serialize a ValueContainer to string format.
+
+    Example:
+        from container_module.di import serialize_container
+        data = serialize_container(container)
+    """
+
+def deserialize_container(data: str, parse_only_header: bool = True) -> ValueContainer:
+    """
+    Deserialize a ValueContainer from string data.
+
+    Example:
+        from container_module.di import deserialize_container
+        container = deserialize_container(data, parse_only_header=False)
+    """
+```
+
+### FastAPI Integration Example
+
+```python
+from fastapi import Depends, FastAPI
+from container_module import IContainerFactory, DefaultContainerFactory
+from container_module.values import StringValue
+
+app = FastAPI()
+
+def get_container_factory() -> IContainerFactory:
+    """Dependency provider for container factory."""
+    return DefaultContainerFactory()
+
+@app.post("/messages")
+async def create_message(
+    factory: IContainerFactory = Depends(get_container_factory)
+):
+    container = (
+        factory.create_builder()
+        .set_source("api_client")
+        .set_target("message_processor")
+        .set_type("api_request")
+        .add_value(StringValue("endpoint", "/messages"))
+        .build()
+    )
+    return {"message_id": container.serialize()[:50]}
+```
+
+### Mock Factory for Testing
+
+```python
+class MockContainerFactory:
+    """Mock factory for unit testing."""
+
+    def __init__(self):
+        self.create_calls = []
+
+    def create(self, source_id="", source_sub_id="", target_id="", target_sub_id="", message_type=""):
+        self.create_calls.append({"source_id": source_id, "message_type": message_type})
+        return ValueContainer(source_id=source_id, message_type=message_type)
+
+    def create_with_values(self, values, source_id="", target_id="", message_type=""):
+        return ValueContainer()
+
+    def create_from_serialized(self, data, parse_only_header=True):
+        return ValueContainer(data_string=data)
+
+    def create_builder(self):
+        return MessagingBuilder()
+
+# Usage in tests
+mock = MockContainerFactory()
+assert isinstance(mock, IContainerFactory)  # Protocol check passes
+```
+
+---
+
 ## Value Types
 
 ### Abstract Base Class
@@ -1073,5 +1268,5 @@ if value:
 ---
 
 **Created**: 2025-11-26
-**Version**: 1.1.0
+**Version**: 1.3.0
 **Python Version**: 3.8+

@@ -23,6 +23,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.0] - 2025-12-17
+
+### Added
+- **Dependency Injection Support**: DI-compatible factory classes for modern Python architectures
+  - New module: `container_module/di/adapters.py`
+  - `IContainerFactory` Protocol for container creation abstraction
+  - `IContainerSerializer` Protocol for serialization abstraction
+  - `DefaultContainerFactory` implementation
+  - `DefaultContainerSerializer` implementation
+  - Convenience functions: `serialize_container()`, `deserialize_container()`
+  - Facilitates integration with frameworks like FastAPI or Dependency Injector
+  - Standardizes object creation patterns matching C++ Kcenon module patterns
+  - Unit tests: `tests/test_di_adapters.py` (21 test cases)
+
+### Usage Example
+```python
+from container_module import (
+    DefaultContainerFactory,
+    DefaultContainerSerializer,
+    IContainerFactory,
+)
+from container_module.values import StringValue
+
+# Use factory for dependency injection
+factory = DefaultContainerFactory()
+container = factory.create(
+    source_id="client1",
+    target_id="server1",
+    message_type="request"
+)
+
+# Or use builder pattern via factory
+container = (
+    factory.create_builder()
+    .set_source("client1")
+    .set_target("server1")
+    .add_value(StringValue("data", "value"))
+    .build()
+)
+
+# FastAPI integration example
+from fastapi import Depends
+
+def get_factory() -> IContainerFactory:
+    return DefaultContainerFactory()
+
+@app.post("/messages")
+async def create_message(factory: IContainerFactory = Depends(get_factory)):
+    container = factory.create(source_id="api")
+    return {"status": "created"}
+```
+
+---
+
 ## [1.2.0] - 2025-12-17
 
 ### Added

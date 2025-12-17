@@ -8,7 +8,7 @@ Python Container System - A high-performance type-safe container framework
 Equivalent to the C++ container_system implementation
 """
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 __author__ = "kcenon"
 __email__ = "kcenon@naver.com"
 
