@@ -16,6 +16,7 @@ from container_module.core.value_types import ValueTypes, convert_value_type
 from container_module.core.value import Value
 from container_module.core.container import ValueContainer
 from container_module.core.value_store import ValueStore
+from container_module.messaging.builder import MessagingBuilder
 
 __all__ = [
     "ValueTypes",
@@ -23,4 +24,5 @@ __all__ = [
     "Value",
     "ValueContainer",
     "ValueStore",
+    "MessagingBuilder",
 ]

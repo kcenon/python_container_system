@@ -1,16 +1,17 @@
 # python_container_system API Reference
 
-> **Version**: 1.1.0
-> **Last Updated**: 2025-11-26
+> **Version**: 1.2.0
+> **Last Updated**: 2025-12-17
 > **Status**: Production Ready
 
 ## Table of Contents
 
 1. [Namespace](#namespace)
 2. [ValueContainer](#valuecontainer)
-3. [Value Types](#value-types)
-4. [Serialization](#serialization)
-5. [Adapters](#adapters)
+3. [MessagingBuilder](#messagingbuilder)
+4. [Value Types](#value-types)
+5. [Serialization](#serialization)
+6. [Adapters](#adapters)
 
 ---
 
@@ -439,6 +440,176 @@ def enable_thread_safety(self, enabled: bool = True) -> None:
         container.enable_thread_safety(True)
         # Now safe for concurrent access
     """
+```
+
+---
+
+## MessagingBuilder
+
+### Overview
+
+**Module**: `from container_module import MessagingBuilder`
+
+**Description**: Builder class for creating ValueContainer instances with fluent API
+
+### Constructor
+
+```python
+def __init__(self) -> None:
+    """
+    Initialize a new MessagingBuilder with default values.
+
+    Example:
+        builder = MessagingBuilder()
+    """
+```
+
+### Methods
+
+#### `set_source()`
+
+```python
+def set_source(self, source_id: str, source_sub_id: str = "") -> MessagingBuilder:
+    """
+    Set the source identifier for the message.
+
+    Args:
+        source_id: Source identifier
+        source_sub_id: Source sub-identifier (optional)
+
+    Returns:
+        Self for method chaining
+
+    Example:
+        builder.set_source("client1", "session1")
+    """
+```
+
+#### `set_target()`
+
+```python
+def set_target(self, target_id: str, target_sub_id: str = "") -> MessagingBuilder:
+    """
+    Set the target identifier for the message.
+
+    Args:
+        target_id: Target identifier
+        target_sub_id: Target sub-identifier (optional)
+
+    Returns:
+        Self for method chaining
+
+    Example:
+        builder.set_target("server1", "handler1")
+    """
+```
+
+#### `set_type()`
+
+```python
+def set_type(self, message_type: str) -> MessagingBuilder:
+    """
+    Set the message type.
+
+    Args:
+        message_type: Type of message
+
+    Returns:
+        Self for method chaining
+
+    Example:
+        builder.set_type("request")
+    """
+```
+
+#### `add_value()`
+
+```python
+def add_value(self, value: Value) -> MessagingBuilder:
+    """
+    Add a value to the message.
+
+    Args:
+        value: Value to add
+
+    Returns:
+        Self for method chaining
+
+    Example:
+        builder.add_value(StringValue("name", "John"))
+    """
+```
+
+#### `add_values()`
+
+```python
+def add_values(self, values: List[Value]) -> MessagingBuilder:
+    """
+    Add multiple values to the message.
+
+    Args:
+        values: List of values to add
+
+    Returns:
+        Self for method chaining
+
+    Example:
+        builder.add_values([StringValue("name", "John"), IntValue("age", 30)])
+    """
+```
+
+#### `build()`
+
+```python
+def build(self) -> ValueContainer:
+    """
+    Build and return the configured ValueContainer.
+
+    Returns:
+        A new ValueContainer with the configured settings
+
+    Example:
+        container = builder.build()
+    """
+```
+
+#### `reset()`
+
+```python
+def reset(self) -> MessagingBuilder:
+    """
+    Reset the builder to default state for reuse.
+
+    Returns:
+        Self for method chaining
+
+    Example:
+        builder.reset()
+    """
+```
+
+### Complete Usage Example
+
+```python
+from container_module import MessagingBuilder
+from container_module.values import StringValue, IntValue, BoolValue
+
+# Create container using builder pattern
+container = (
+    MessagingBuilder()
+    .set_source("client1", "session1")
+    .set_target("server1", "handler1")
+    .set_type("user_request")
+    .add_value(StringValue("username", "john_doe"))
+    .add_value(IntValue("user_id", 12345))
+    .add_value(BoolValue("is_active", True))
+    .build()
+)
+
+# Builder can be reused after reset
+builder = MessagingBuilder()
+request = builder.set_source("client").set_type("request").build()
+response = builder.reset().set_source("server").set_type("response").build()
 ```
 
 ---

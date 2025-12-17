@@ -128,6 +128,29 @@ xml_str = container.to_xml()
 print(xml_str)
 ```
 
+### Builder Pattern
+
+```python
+from container_module import MessagingBuilder
+from container_module.values import StringValue, IntValue
+
+# Use fluent API for container creation
+container = (
+    MessagingBuilder()
+    .set_source("client1", "session1")
+    .set_target("server1", "handler1")
+    .set_type("request")
+    .add_value(StringValue("name", "John"))
+    .add_value(IntValue("age", 30))
+    .build()
+)
+
+# Builder can be reused after reset
+builder = MessagingBuilder()
+container1 = builder.set_source("src1").set_type("type1").build()
+container2 = builder.reset().set_source("src2").set_type("type2").build()
+```
+
 ### Thread-Safe Operations
 
 ```python
