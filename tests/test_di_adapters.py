@@ -41,7 +41,9 @@ class TestIContainerFactoryProtocol:
                 )
                 return container
 
-            def create_with_values(self, values, source_id="", target_id="", message_type=""):
+            def create_with_values(
+                self, values, source_id="", target_id="", message_type=""
+            ):
                 return ValueContainer()
 
             def create_from_serialized(self, data, parse_only_header=True):
@@ -210,7 +212,9 @@ class TestDefaultContainerSerializer:
 
         # Bytes roundtrip
         serialized_bytes = serializer.serialize_bytes(original)
-        restored_bytes = serializer.deserialize_bytes(serialized_bytes, parse_only_header=False)
+        restored_bytes = serializer.deserialize_bytes(
+            serialized_bytes, parse_only_header=False
+        )
 
         assert restored_bytes.source_id == original.source_id
 
@@ -250,7 +254,9 @@ class TestMockDIScenario:
             def __init__(self, factory: IContainerFactory):
                 self._factory = factory
 
-            def create_request(self, source: str, target: str, payload: str) -> ValueContainer:
+            def create_request(
+                self, source: str, target: str, payload: str
+            ) -> ValueContainer:
                 return (
                     self._factory.create_builder()
                     .set_source(source)
@@ -331,7 +337,9 @@ class TestMockDIScenario:
                     message_type=message_type,
                 )
 
-            def create_with_values(self, values, source_id="", target_id="", message_type=""):
+            def create_with_values(
+                self, values, source_id="", target_id="", message_type=""
+            ):
                 return ValueContainer()
 
             def create_from_serialized(self, data, parse_only_header=True):
