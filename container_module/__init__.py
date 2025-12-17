@@ -17,6 +17,14 @@ from container_module.core.value import Value
 from container_module.core.container import ValueContainer
 from container_module.core.value_store import ValueStore
 from container_module.messaging.builder import MessagingBuilder
+from container_module.di.adapters import (
+    IContainerFactory,
+    IContainerSerializer,
+    DefaultContainerFactory,
+    DefaultContainerSerializer,
+    serialize_container,
+    deserialize_container,
+)
 
 __all__ = [
     "ValueTypes",
@@ -25,4 +33,10 @@ __all__ = [
     "ValueContainer",
     "ValueStore",
     "MessagingBuilder",
+    "IContainerFactory",
+    "IContainerSerializer",
+    "DefaultContainerFactory",
+    "DefaultContainerSerializer",
+    "serialize_container",
+    "deserialize_container",
 ]
