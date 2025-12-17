@@ -24,55 +24,35 @@ class TestMessagingBuilder:
 
     def test_set_source(self):
         """Test setting source identifiers."""
-        container = (
-            MessagingBuilder()
-            .set_source("client1", "session1")
-            .build()
-        )
+        container = MessagingBuilder().set_source("client1", "session1").build()
 
         assert container.source_id == "client1"
         assert container.source_sub_id == "session1"
 
     def test_set_source_without_sub_id(self):
         """Test setting source with only main ID."""
-        container = (
-            MessagingBuilder()
-            .set_source("client1")
-            .build()
-        )
+        container = MessagingBuilder().set_source("client1").build()
 
         assert container.source_id == "client1"
         assert container.source_sub_id == ""
 
     def test_set_target(self):
         """Test setting target identifiers."""
-        container = (
-            MessagingBuilder()
-            .set_target("server1", "handler1")
-            .build()
-        )
+        container = MessagingBuilder().set_target("server1", "handler1").build()
 
         assert container.target_id == "server1"
         assert container.target_sub_id == "handler1"
 
     def test_set_target_without_sub_id(self):
         """Test setting target with only main ID."""
-        container = (
-            MessagingBuilder()
-            .set_target("server1")
-            .build()
-        )
+        container = MessagingBuilder().set_target("server1").build()
 
         assert container.target_id == "server1"
         assert container.target_sub_id == ""
 
     def test_set_type(self):
         """Test setting message type."""
-        container = (
-            MessagingBuilder()
-            .set_type("request")
-            .build()
-        )
+        container = MessagingBuilder().set_type("request").build()
 
         assert container.message_type == "request"
 
@@ -127,12 +107,7 @@ class TestMessagingBuilder:
             IntValue("age", 30),
         ]
 
-        container = (
-            MessagingBuilder()
-            .set_type("test")
-            .add_values(values)
-            .build()
-        )
+        container = MessagingBuilder().set_type("test").add_values(values).build()
 
         assert len(container.units) == 2
 
@@ -177,21 +152,10 @@ class TestMessagingBuilder:
         builder = MessagingBuilder()
 
         # Build first container
-        container1 = (
-            builder
-            .set_source("client1")
-            .set_type("request")
-            .build()
-        )
+        container1 = builder.set_source("client1").set_type("request").build()
 
         # Reset and build second container
-        container2 = (
-            builder
-            .reset()
-            .set_source("client2")
-            .set_type("response")
-            .build()
-        )
+        container2 = builder.reset().set_source("client2").set_type("response").build()
 
         assert container1.source_id == "client1"
         assert container1.message_type == "request"
@@ -216,6 +180,7 @@ class TestMessagingBuilder:
 
         # Test deserialization
         from container_module import ValueContainer
+
         new_container = ValueContainer(data_string=serialized, parse_only_header=False)
         assert new_container.source_id == "src"
         assert new_container.target_id == "tgt"
